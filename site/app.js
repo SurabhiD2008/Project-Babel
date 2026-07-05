@@ -14,7 +14,7 @@ const app = document.getElementById("app");
 // Canonical public site URL — always https so shared links open securely
 // (many browsers now refuse or warn on plain http). Used on the shareable
 // image card and in every social-share intent.
-const SITE_URL = "https://babel.io";
+const SITE_URL = "https://project-babel-five.vercel.app";
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
