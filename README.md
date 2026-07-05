@@ -2,12 +2,14 @@
 
 > *"The limits of my language mean the limits of my world."* — Ludwig Wittgenstein
 
+**🌍 Live:** **[project-babel-five.vercel.app](https://project-babel-five.vercel.app)** — full-stack on Vercel + Neon Postgres.
+
 **Babel is an interactive atlas of untranslatable words** — feelings and concepts that exist in one language but have no direct equivalent in English. Describe a feeling in plain language and Babel finds the word for it, drawn from **500 words across 121 languages**, each rendered as a six-dimension portrait.
 
 It is one project in two parts:
 
 - **Frontend** (`site/`) — a zero-build, vanilla-JavaScript single-page app. Open `index.html` and it runs; `data.js` is the bundled source of word data.
-- **Backend** (`server/`) — Node.js + Express + Prisma + SQLite. Serves the JSON API **and** the static site from one command, and is the live source of truth for accounts, saved data, submissions, analytics, and the word database.
+- **Backend** (`server/`) — Node.js + Express + Prisma. Serves the JSON API **and** the static site, and is the live source of truth for accounts, saved data, submissions, analytics, and the word database. Uses **PostgreSQL (Neon)** in production (and for local dev); SQLite is still supported for a zero-setup local run.
 
 The frontend calls the real backend first and falls back to `localStorage` and an in-browser engine when opened standalone, so the site works either way.
 
@@ -106,10 +108,5 @@ Project Babel/
 ```
 
 > **Note on the matching engine:** the offline engine exists in two places kept in sync by hand — `server/src/ai.js` (used by the API) and the fallback in `site/app.js` (used when standalone). Change them together, then clear the feeling cache and re-run the benchmark.
-
-## Production (PostgreSQL)
-In `server/prisma/schema.prisma`, switch the datasource `provider` to `postgresql`, set `DATABASE_URL`, run `npx prisma migrate deploy` then `npm run seed`. No route changes required; front a Redis cache over the `AiCache` table for shared caching across instances.
-
----
 
 *Built by Surabhi Datta. Definitions are curatorial editorial synthesis, not a peer-reviewed lexicon — provenance and measured accuracy are disclosed on the in-app Sources page.*
