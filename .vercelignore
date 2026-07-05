@@ -1,0 +1,19 @@
+# Dependencies — Vercel installs fresh on its Linux build machine
+node_modules
+
+# Secrets & local env — Vercel uses its own environment variables
+.env
+.env.*
+
+# Local SQLite database — production uses Neon Postgres
+*.db
+*.db-journal
+
+# Local tooling / internal docs (not needed in the deployment)
+.claude
+.vercel
+project_babel_spec.md
+
+# OS cruft
+.DS_Store
+Thumbs.db
