@@ -2,12 +2,14 @@
 
 > *"The limits of my language mean the limits of my world."* — Ludwig Wittgenstein
 
+**🌍 Live:** **[project-babel-five.vercel.app](https://project-babel-five.vercel.app)** — full-stack on Vercel + Neon Postgres.
+
 **Babel is an interactive atlas of untranslatable words** — feelings and concepts that exist in one language but have no direct equivalent in English. Describe a feeling in plain language and Babel finds the word for it, drawn from **500 words across 121 languages**, each rendered as a six-dimension portrait.
 
 It is one project in two parts:
 
 - **Frontend** (`site/`) — a zero-build, vanilla-JavaScript single-page app. Open `index.html` and it runs; `data.js` is the bundled source of word data.
-- **Backend** (`server/`) — Node.js + Express + Prisma + SQLite. Serves the JSON API **and** the static site from one command, and is the live source of truth for accounts, saved data, submissions, analytics, and the word database.
+- **Backend** (`server/`) — Node.js + Express + Prisma. Serves the JSON API **and** the static site, and is the live source of truth for accounts, saved data, submissions, analytics, and the word database. Uses **PostgreSQL (Neon)** in production (and for local dev); SQLite is still supported for a zero-setup local run.
 
 The frontend calls the real backend first and falls back to `localStorage` and an in-browser engine when opened standalone, so the site works either way.
 
@@ -107,8 +109,27 @@ Project Babel/
 
 > **Note on the matching engine:** the offline engine exists in two places kept in sync by hand — `server/src/ai.js` (used by the API) and the fallback in `site/app.js` (used when standalone). Change them together, then clear the feeling cache and re-run the benchmark.
 
-## Production (PostgreSQL)
-In `server/prisma/schema.prisma`, switch the datasource `provider` to `postgresql`, set `DATABASE_URL`, run `npx prisma migrate deploy` then `npm run seed`. No route changes required; front a Redis cache over the `AiCache` table for shared caching across instances.
+## Deployment (Vercel + Neon Postgres)
+
+The live site runs entirely on Vercel: the static frontend (`site/`) is served from the CDN, and the Express app is wrapped as a **single serverless function** (`api/index.js` → `server/src/index.js`) that talks to a **Neon Postgres** database. `vercel.json` serves `site/` and rewrites `/api/(.*)` to the function.
+
+**Architecture note:** `server/src/index.js` exports the Express `app` and only calls `app.listen()` for local dev (`require.main === module`), so the same code runs both as a long-lived server locally and as a serverless function on Vercel.
+
+**One-time setup**
+1. Create a Neon Postgres database (Vercel dashboard → **Storage → Create Database → Neon**). The integration injects `DATABASE_URL` / `DATABASE_URL_UNPOOLED` into the project.
+2. Add env vars in Vercel → Settings → Environment Variables: `JWT_SECRET`, `ADMIN_KEY` (and optionally `ANTHROPIC_API_KEY`).
+3. Create the tables and seed the words against Neon (with the connection strings in `server/.env`):
+   ```bash
+   cd server
+   npx prisma db push     # create tables (uses the direct/unpooled URL)
+   node prisma/seed.js     # load the 500 words
+   ```
+
+**Deploying**
+- **Git-based (recommended):** push to the connected GitHub repo — Vercel builds and deploys automatically on every push to `main`.
+- **CLI:** `cd "Project Babel" && npx vercel deploy --prod --yes`
+
+`schema.prisma` uses `provider = "postgresql"` with `url` (pooled/pgbouncer) for the app and `directUrl` (unpooled) for migrations, plus `binaryTargets = ["native", "rhel-openssl-3.0.x"]` so the Prisma query engine works on Vercel's Linux runtime. For scale, front a Redis cache over the `AiCache` table for shared caching across instances.
 
 ---
 
