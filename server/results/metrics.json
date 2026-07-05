@@ -1,0 +1,462 @@
+{
+  "generatedAt": "2026-07-04T15:20:23.055Z",
+  "sampleSize": 50,
+  "categoryMatchRate": 90,
+  "avgMatchScore": 72,
+  "avgResponseMs": 53,
+  "minResponseMs": 23,
+  "maxResponseMs": 539,
+  "methodology": "50 hand-written feeling descriptions (7 per emotion category), each independently authored (not copied from any word's own definition). 'Category match' = the returned best-match word's category equals the category the input was written for — used as a reproducible proxy for semantic fit, run against the offline matching engine.",
+  "rows": [
+    {
+      "input": "I keep aching for a home I don't think I've ever actually lived in.",
+      "intendedCategory": "longing",
+      "matchedWord": "Xenitia",
+      "matchedCategory": "longing",
+      "matchScore": 60,
+      "correct": true,
+      "ms": 539
+    },
+    {
+      "input": "Missing someone so much it feels like a physical weight in my chest.",
+      "intendedCategory": "longing",
+      "matchedWord": "Hiányzol",
+      "matchedCategory": "longing",
+      "matchScore": 77,
+      "correct": true,
+      "ms": 39
+    },
+    {
+      "input": "That specific homesickness for my grandmother's kitchen, which doesn't exist anymore.",
+      "intendedCategory": "longing",
+      "matchedWord": "Hiraeth",
+      "matchedCategory": "longing",
+      "matchScore": 62,
+      "correct": true,
+      "ms": 49
+    },
+    {
+      "input": "Wishing I could go back to a summer that already ended years ago.",
+      "intendedCategory": "longing",
+      "matchedWord": "Sankofa",
+      "matchedCategory": "time",
+      "matchScore": 55,
+      "correct": false,
+      "ms": 30
+    },
+    {
+      "input": "The quiet grief of a friendship that faded without any single ending.",
+      "intendedCategory": "longing",
+      "matchedWord": "Parea",
+      "matchedCategory": "social",
+      "matchScore": 62,
+      "correct": false,
+      "ms": 40
+    },
+    {
+      "input": "Longing for a country I emigrated from as a child and barely remember.",
+      "intendedCategory": "longing",
+      "matchedWord": "Nhớ",
+      "matchedCategory": "longing",
+      "matchScore": 86,
+      "correct": true,
+      "ms": 34
+    },
+    {
+      "input": "An ache for a person who is still alive but no longer part of my life.",
+      "intendedCategory": "longing",
+      "matchedWord": "Enyorança",
+      "matchedCategory": "longing",
+      "matchScore": 68,
+      "correct": true,
+      "ms": 29
+    },
+    {
+      "input": "Standing at the edge of a canyon and feeling impossibly small and amazed.",
+      "intendedCategory": "awe",
+      "matchedWord": "Gökotta",
+      "matchedCategory": "awe",
+      "matchScore": 77,
+      "correct": true,
+      "ms": 35
+    },
+    {
+      "input": "The hush that comes over a forest right before it starts snowing.",
+      "intendedCategory": "awe",
+      "matchedWord": "Shinrin-yoku",
+      "matchedCategory": "awe",
+      "matchScore": 72,
+      "correct": true,
+      "ms": 46
+    },
+    {
+      "input": "Watching the tide come in at dusk and losing all sense of time.",
+      "intendedCategory": "awe",
+      "matchedWord": "Luscofusco",
+      "matchedCategory": "time",
+      "matchScore": 71,
+      "correct": false,
+      "ms": 43
+    },
+    {
+      "input": "The overwhelming scale of a night sky far from any city lights.",
+      "intendedCategory": "awe",
+      "matchedWord": "Komorebi",
+      "matchedCategory": "awe",
+      "matchScore": 54,
+      "correct": true,
+      "ms": 29
+    },
+    {
+      "input": "Sunlight breaking through storm clouds over the ocean, and just staring.",
+      "intendedCategory": "awe",
+      "matchedWord": "Komorebi",
+      "matchedCategory": "awe",
+      "matchScore": 73,
+      "correct": true,
+      "ms": 30
+    },
+    {
+      "input": "The stillness of an old cathedral that makes you want to whisper.",
+      "intendedCategory": "awe",
+      "matchedWord": "Ciúnas",
+      "matchedCategory": "awe",
+      "matchScore": 77,
+      "correct": true,
+      "ms": 34
+    },
+    {
+      "input": "Watching a thunderstorm roll in across open farmland, half scared and half thrilled.",
+      "intendedCategory": "awe",
+      "matchedWord": "Prostor",
+      "matchedCategory": "awe",
+      "matchScore": 52,
+      "correct": true,
+      "ms": 29
+    },
+    {
+      "input": "That awkward pause where two people both want to apologize first.",
+      "intendedCategory": "social",
+      "matchedWord": "Mamihlapinatapai",
+      "matchedCategory": "social",
+      "matchScore": 79,
+      "correct": true,
+      "ms": 31
+    },
+    {
+      "input": "The warm relief of being fully understood by an old friend without explaining.",
+      "intendedCategory": "social",
+      "matchedWord": "Parea",
+      "matchedCategory": "social",
+      "matchScore": 64,
+      "correct": true,
+      "ms": 37
+    },
+    {
+      "input": "Feeling like an outsider at a party where everyone else already knows each other.",
+      "intendedCategory": "social",
+      "matchedWord": "Dapjeongneo",
+      "matchedCategory": "social",
+      "matchScore": 69,
+      "correct": true,
+      "ms": 47
+    },
+    {
+      "input": "The tension of waiting to see if someone will introduce themselves first.",
+      "intendedCategory": "social",
+      "matchedWord": "Mamihlapinatapai",
+      "matchedCategory": "social",
+      "matchScore": 62,
+      "correct": true,
+      "ms": 39
+    },
+    {
+      "input": "A shared glance across a room that says more than any conversation could.",
+      "intendedCategory": "social",
+      "matchedWord": "Simunye",
+      "matchedCategory": "social",
+      "matchScore": 60,
+      "correct": true,
+      "ms": 29
+    },
+    {
+      "input": "The specific discomfort of a group photo where nobody knows where to stand.",
+      "intendedCategory": "social",
+      "matchedWord": "Wa",
+      "matchedCategory": "social",
+      "matchScore": 70,
+      "correct": true,
+      "ms": 26
+    },
+    {
+      "input": "Being welcomed into a family gathering as if you'd always belonged there.",
+      "intendedCategory": "social",
+      "matchedWord": "Whanaungatanga",
+      "matchedCategory": "social",
+      "matchScore": 69,
+      "correct": true,
+      "ms": 30
+    },
+    {
+      "input": "The giddy, fluttery feeling right when you realize you might be falling in love.",
+      "intendedCategory": "joy",
+      "matchedWord": "Forelsket",
+      "matchedCategory": "joy",
+      "matchScore": 83,
+      "correct": true,
+      "ms": 44
+    },
+    {
+      "input": "Curling up under a blanket with tea while it storms outside, utterly content.",
+      "intendedCategory": "joy",
+      "matchedWord": "Mysa",
+      "matchedCategory": "joy",
+      "matchScore": 86,
+      "correct": true,
+      "ms": 49
+    },
+    {
+      "input": "The uncontainable urge to squeeze a baby's cheeks because they're unbearably cute.",
+      "intendedCategory": "joy",
+      "matchedWord": "Gigil",
+      "matchedCategory": "joy",
+      "matchScore": 97,
+      "correct": true,
+      "ms": 67
+    },
+    {
+      "input": "Pure delight at a surprise reunion with someone you haven't seen in years.",
+      "intendedCategory": "joy",
+      "matchedWord": "Aspaldiko",
+      "matchedCategory": "joy",
+      "matchScore": 81,
+      "correct": true,
+      "ms": 70
+    },
+    {
+      "input": "The cozy, sociable warmth of a long dinner with people you love.",
+      "intendedCategory": "joy",
+      "matchedWord": "Hanan",
+      "matchedCategory": "joy",
+      "matchScore": 66,
+      "correct": true,
+      "ms": 46
+    },
+    {
+      "input": "Bursting with proud, gushing happiness over a friend's achievement.",
+      "intendedCategory": "joy",
+      "matchedWord": "Kvell",
+      "matchedCategory": "joy",
+      "matchScore": 97,
+      "correct": true,
+      "ms": 50
+    },
+    {
+      "input": "That warm, silly happiness of an inside joke shared with someone close.",
+      "intendedCategory": "joy",
+      "matchedWord": "Mudita",
+      "matchedCategory": "joy",
+      "matchScore": 60,
+      "correct": true,
+      "ms": 52
+    },
+    {
+      "input": "The restless, jittery anxiety before an exam whose result you can't control.",
+      "intendedCategory": "tension",
+      "matchedWord": "Shpilkes",
+      "matchedCategory": "tension",
+      "matchScore": 68,
+      "correct": true,
+      "ms": 43
+    },
+    {
+      "input": "Cringing so hard for someone else's public mistake that it feels like your own.",
+      "intendedCategory": "tension",
+      "matchedWord": "Vergüenza ajena",
+      "matchedCategory": "tension",
+      "matchScore": 81,
+      "correct": true,
+      "ms": 43
+    },
+    {
+      "input": "A simmering, hard-to-name irritation at everything and nothing in particular.",
+      "intendedCategory": "tension",
+      "matchedWord": "Vergüenza ajena",
+      "matchedCategory": "tension",
+      "matchScore": 57,
+      "correct": true,
+      "ms": 94
+    },
+    {
+      "input": "The dread of an inbox you have been avoiding for three days straight.",
+      "intendedCategory": "tension",
+      "matchedWord": "Aduantas",
+      "matchedCategory": "tension",
+      "matchScore": 54,
+      "correct": true,
+      "ms": 121
+    },
+    {
+      "input": "That tight, cornered feeling of being asked to explain something embarrassing on the spot.",
+      "intendedCategory": "tension",
+      "matchedWord": "Erklärungsnot",
+      "matchedCategory": "tension",
+      "matchScore": 97,
+      "correct": true,
+      "ms": 118
+    },
+    {
+      "input": "A jittery restlessness the night before a big trip, unable to sit still.",
+      "intendedCategory": "tension",
+      "matchedWord": "Shpilkes",
+      "matchedCategory": "tension",
+      "matchScore": 88,
+      "correct": true,
+      "ms": 33
+    },
+    {
+      "input": "The exhausted, wound-up feeling of having had absolutely enough of everything today.",
+      "intendedCategory": "tension",
+      "matchedWord": "Ras-le-bol",
+      "matchedCategory": "tension",
+      "matchScore": 81,
+      "correct": true,
+      "ms": 30
+    },
+    {
+      "input": "The strange comfort of finding a photo that brings a whole year rushing back.",
+      "intendedCategory": "time",
+      "matchedWord": "Natsukashii",
+      "matchedCategory": "time",
+      "matchScore": 56,
+      "correct": true,
+      "ms": 47
+    },
+    {
+      "input": "Staring blankly into space, thinking of nothing at all for a while.",
+      "intendedCategory": "time",
+      "matchedWord": "Boketto",
+      "matchedCategory": "time",
+      "matchScore": 97,
+      "correct": true,
+      "ms": 55
+    },
+    {
+      "input": "The guilty pile of books I keep buying and never actually reading.",
+      "intendedCategory": "time",
+      "matchedWord": "Tsundoku",
+      "matchedCategory": "time",
+      "matchScore": 97,
+      "correct": true,
+      "ms": 37
+    },
+    {
+      "input": "That eerie feeling of a place looking exactly the same after a decade away.",
+      "intendedCategory": "time",
+      "matchedWord": "Smultronställe",
+      "matchedCategory": "time",
+      "matchScore": 54,
+      "correct": true,
+      "ms": 45
+    },
+    {
+      "input": "The specific melancholy of packing away decorations after a holiday ends.",
+      "intendedCategory": "time",
+      "matchedWord": "Puente",
+      "matchedCategory": "time",
+      "matchScore": 81,
+      "correct": true,
+      "ms": 42
+    },
+    {
+      "input": "Noticing the first cold wind of autumn and feeling the whole year turn.",
+      "intendedCategory": "time",
+      "matchedWord": "Kogarashi",
+      "matchedCategory": "awe",
+      "matchScore": 97,
+      "correct": false,
+      "ms": 29
+    },
+    {
+      "input": "The bittersweet ache of a song that instantly returns you to your teenage bedroom.",
+      "intendedCategory": "time",
+      "matchedWord": "Kairos",
+      "matchedCategory": "time",
+      "matchScore": 57,
+      "correct": true,
+      "ms": 34
+    },
+    {
+      "input": "Wondering whether the words we have shape which feelings we're able to notice.",
+      "intendedCategory": "philos",
+      "matchedWord": "Zeitgeist",
+      "matchedCategory": "philos",
+      "matchScore": 82,
+      "correct": true,
+      "ms": 33
+    },
+    {
+      "input": "A quiet late-night question about whether anything you do actually matters.",
+      "intendedCategory": "philos",
+      "matchedWord": "Lagom",
+      "matchedCategory": "philos",
+      "matchScore": 55,
+      "correct": true,
+      "ms": 30
+    },
+    {
+      "input": "The unsettled sense that the world is arranged in a way that's fundamentally out of balance.",
+      "intendedCategory": "philos",
+      "matchedWord": "Pono",
+      "matchedCategory": "philos",
+      "matchScore": 64,
+      "correct": true,
+      "ms": 23
+    },
+    {
+      "input": "Finding a strange, calm acceptance in realizing you can't control the outcome.",
+      "intendedCategory": "philos",
+      "matchedWord": "Shō ga nai",
+      "matchedCategory": "philos",
+      "matchScore": 70,
+      "correct": true,
+      "ms": 30
+    },
+    {
+      "input": "The small daily sense of purpose that gets you out of bed for no dramatic reason.",
+      "intendedCategory": "philos",
+      "matchedWord": "Ikigai",
+      "matchedCategory": "philos",
+      "matchScore": 91,
+      "correct": true,
+      "ms": 38
+    },
+    {
+      "input": "A gentle wonder at how imperfection can somehow make something more beautiful.",
+      "intendedCategory": "philos",
+      "matchedWord": "Avos'",
+      "matchedCategory": "philos",
+      "matchScore": 70,
+      "correct": true,
+      "ms": 32
+    },
+    {
+      "input": "Sensing that some things are only truly understood by living through them yourself.",
+      "intendedCategory": "philos",
+      "matchedWord": "Umunthu",
+      "matchedCategory": "social",
+      "matchScore": 56,
+      "correct": false,
+      "ms": 32
+    },
+    {
+      "input": "A calm, settled feeling that things are exactly as they should be, at least for now.",
+      "intendedCategory": "philos",
+      "matchedWord": "Sukoon",
+      "matchedCategory": "philos",
+      "matchScore": 64,
+      "correct": true,
+      "ms": 27
+    }
+  ]
+}

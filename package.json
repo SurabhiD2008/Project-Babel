@@ -1,0 +1,9 @@
+{
+  "name": "project-babel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Babel — an interactive atlas of untranslatable words (full-stack: static frontend + serverless API).",
+  "scripts": {
+    "vercel-build": "cd server && npm install && npx prisma generate"
+  }
+}

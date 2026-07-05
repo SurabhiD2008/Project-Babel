@@ -1,0 +1,157 @@
+// Project Babel — Prisma schema (spec §6)
+// Datasource is PostgreSQL (Neon) for the deployed full-stack app.
+// `url` is the pooled connection (pgbouncer) used at runtime; `directUrl` is the
+// unpooled connection used for schema migrations / `prisma db push`.
+// binaryTargets includes Vercel's Linux runtime so the query engine works there.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model Word {
+  id          Int          @id @default(autoincrement())
+  slug        String       @unique
+  number      Int
+  word        String
+  language    String
+  native      String       @default("")
+  phonetic    String       @default("")
+  family      String
+  script      String
+  distScore   Int // cognitive distance 0-100
+  intensity   Int          @default(60)
+  category    String
+  defShort    String
+  defFull     String
+  createdAt   DateTime     @default(now())
+
+  dimensions  Dimension[]
+  cultures    Culture[]
+  comparisons Comparison[]
+  related     Related[]
+  savedBy     SavedWord[]
+  savedCards  SavedCard[]
+
+  @@index([category])
+  @@index([family])
+  @@index([distScore])
+}
+
+model Dimension {
+  id      Int    @id @default(autoincrement())
+  wordId  Int
+  word    Word   @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  label   String
+  content String
+}
+
+model Culture {
+  id      Int    @id @default(autoincrement())
+  wordId  Int
+  word    Word   @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  name    String
+  content String
+}
+
+model Comparison {
+  id             Int    @id @default(autoincrement())
+  wordId         Int
+  word           Word   @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  lang           String
+  comparisonWord String
+  similarity     Int
+}
+
+model Related {
+  id          Int    @id @default(autoincrement())
+  wordId      Int
+  word        Word   @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  relatedSlug String
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
+  name         String         @default("")
+  passwordHash String
+  createdAt    DateTime       @default(now())
+  saved        SavedWord[]
+  savedCards   SavedCard[]
+  searches     UserSearch[]
+}
+
+model SavedWord {
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordId  Int
+  word    Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  savedAt DateTime @default(now())
+
+  @@unique([userId, wordId])
+}
+
+// A user's saved shareable image card. The PNG itself is regenerated
+// client-side from the word's data on demand — only the reference is stored.
+model SavedCard {
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordId  Int
+  word    Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  source  String   @default("portrait") // "portrait" | "feeling" | "compose"
+  savedAt DateTime @default(now())
+
+  @@unique([userId, wordId, source])
+}
+
+// A logged-in user's Name My Feeling search history (spec item: user can
+// see their search history after logging in).
+model UserSearch {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  input     String
+  bestSlug  String
+  bestWord  String
+  matchScore Int
+  createdAt DateTime @default(now())
+}
+
+model Submission {
+  id          Int      @id @default(autoincrement())
+  word        String
+  language    String
+  why         String
+  submitter   String   @default("")
+  email       String   @default("")
+  status      String   @default("pending") // pending | rejected_duplicate | rejected_invalid | accepted
+  statusNote  String   @default("")
+  submittedAt DateTime @default(now())
+}
+
+// AI response cache (Redis substitute — spec §6). Keyed by SHA-256 of input.
+model AiCache {
+  id        Int      @id @default(autoincrement())
+  inputHash String   @unique
+  kind      String   @default("feeling")
+  response  String
+  createdAt DateTime @default(now())
+}
+
+// Analytics log (spec §12): searches, composes, word views, share events.
+model SearchLog {
+  id        Int      @id @default(autoincrement())
+  kind      String
+  input     String   @default("")
+  category  String   @default("")
+  bestSlug  String   @default("")
+  createdAt DateTime @default(now())
+}
