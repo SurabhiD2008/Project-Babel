@@ -26,13 +26,11 @@ A quick tour of the interface:
 - **Word portrait** — each word across six dimensions, with a downloadable / shareable image card
 - **Language map** — the whole atlas as a force-directed network, coloured by emotional cluster
 
-<!-- Screenshot gallery — add the four PNGs to screenshots/ (see screenshots/README.md), then uncomment:
 | Home | Name My Feeling |
 |------|-----------------|
 | ![Home](screenshots/home.png) | ![Name My Feeling](screenshots/name-my-feeling.png) |
-| **Word portrait** | **Language map** |
-| ![Word portrait](screenshots/word-portrait.png) | ![Language map](screenshots/language-map.png) |
--->
+| **Word portrait** | **Atlas** |
+| ![Word portrait](screenshots/word-portrait.png) | ![Atlas](screenshots/atlas.png) |
 
 ---
 
@@ -129,5 +127,11 @@ Project Babel/
 ```
 
 > **Note on the matching engine:** the offline engine exists in two places kept in sync by hand — `server/src/ai.js` (used by the API) and the fallback in `site/app.js` (used when standalone). Change them together, then clear the feeling cache and re-run the benchmark.
+
+## License
+
+© 2026 Surabhi Datta. **All rights reserved.** This repository is public for viewing and portfolio evaluation only — no permission is granted to use, copy, modify, or redistribute it without prior written consent. See [LICENSE](LICENSE).
+
+---
 
 *Built by Surabhi Datta. Definitions are curatorial editorial synthesis, not a peer-reviewed lexicon — provenance and measured accuracy are disclosed on the in-app Sources page.*
