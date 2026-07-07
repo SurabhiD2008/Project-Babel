@@ -4,7 +4,7 @@
 
 It's the `X%` you see on every word card, portrait, the language map, and the atlas filters.
 
-> ⚠️ **Honest framing.** Cognitive distance is a **curatorial, interpretive metric**, not an empirical measurement. It's a consistent, transparent way to rank "untranslatability" across the atlas — not a peer-reviewed linguistic constant. The app says as much on its Sources page.
+> **Honest framing.** Cognitive distance is a **curatorial, interpretive metric**, not an empirical measurement. It's a consistent, transparent way to rank "untranslatability" across the atlas — not a peer-reviewed linguistic constant. The app says as much on its Sources page.
 
 ---
 

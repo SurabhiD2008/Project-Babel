@@ -19,7 +19,7 @@ The frontend calls the real backend first and falls back to `localStorage` and a
 
 ## Screenshots
 
-**[▶ Try the live demo →](https://project-babel-five.vercel.app)**
+**[Try the live demo](https://project-babel-five.vercel.app)**
 
 A quick tour of the interface:
 
