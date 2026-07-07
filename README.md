@@ -15,6 +15,27 @@ The frontend calls the real backend first and falls back to `localStorage` and a
 
 ---
 
+## Screenshots
+
+**[▶ Try the live demo →](https://project-babel-five.vercel.app)**
+
+A quick tour of the interface:
+
+- **Home** — describe a feeling and let Babel name it
+- **Name My Feeling** — the closest untranslatable word, with a three-line explanation and cross-language alternatives
+- **Word portrait** — each word across six dimensions, with a downloadable / shareable image card
+- **Language map** — the whole atlas as a force-directed network, coloured by emotional cluster
+
+<!-- Screenshot gallery — add the four PNGs to screenshots/ (see screenshots/README.md), then uncomment:
+| Home | Name My Feeling |
+|------|-----------------|
+| ![Home](screenshots/home.png) | ![Name My Feeling](screenshots/name-my-feeling.png) |
+| **Word portrait** | **Language map** |
+| ![Word portrait](screenshots/word-portrait.png) | ![Language map](screenshots/language-map.png) |
+-->
+
+---
+
 ## Features
 
 ### The eight pages
