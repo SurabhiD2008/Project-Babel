@@ -26,13 +26,11 @@ A quick tour of the interface:
 - **Word portrait** — each word across six dimensions, with a downloadable / shareable image card
 - **Language map** — the whole atlas as a force-directed network, coloured by emotional cluster
 
-<!-- Screenshot gallery — add the four PNGs to screenshots/ (see screenshots/README.md), then uncomment:
 | Home | Name My Feeling |
 |------|-----------------|
 | ![Home](screenshots/home.png) | ![Name My Feeling](screenshots/name-my-feeling.png) |
-| **Word portrait** | **Language map** |
-| ![Word portrait](screenshots/word-portrait.png) | ![Language map](screenshots/language-map.png) |
--->
+| **Word portrait** | **Atlas** |
+| ![Word portrait](screenshots/word-portrait.png) | ![Atlas](screenshots/atlas.png) |
 
 ---
 
@@ -151,6 +149,12 @@ The live site runs entirely on Vercel: the static frontend (`site/`) is served f
 - **CLI:** `cd "Project Babel" && npx vercel deploy --prod --yes`
 
 `schema.prisma` uses `provider = "postgresql"` with `url` (pooled/pgbouncer) for the app and `directUrl` (unpooled) for migrations, plus `binaryTargets = ["native", "rhel-openssl-3.0.x"]` so the Prisma query engine works on Vercel's Linux runtime. For scale, front a Redis cache over the `AiCache` table for shared caching across instances.
+
+---
+
+## License
+
+© 2026 Surabhi Datta. **All rights reserved.** This repository is public for viewing and portfolio evaluation only — no permission is granted to use, copy, modify, or redistribute it without prior written consent. See [LICENSE](LICENSE).
 
 ---
 
