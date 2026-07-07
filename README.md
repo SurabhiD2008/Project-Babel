@@ -130,6 +130,14 @@ Project Babel/
 
 > **Note on the matching engine:** the offline engine exists in two places kept in sync by hand — `server/src/ai.js` (used by the API) and the fallback in `site/app.js` (used when standalone). Change them together, then clear the feeling cache and re-run the benchmark.
 
+## Documentation
+
+Deeper write-ups of how the interesting parts work live in [`docs/`](docs/):
+
+- **[Matching engine](docs/matching-engine.md)** — how "Name My Feeling" and the Composer turn a described feeling into a word: the offline TF-IDF cosine engine, the scoring formula, and the optional Claude upgrade.
+- **[Cognitive distance](docs/cognitive-distance.md)** — how each word's "untranslatability" score is calculated: the curatorial base score and the four-component algorithmic composite.
+- **[Submission screening](docs/submission-screening.md)** — the automated rules a community-submitted word passes through (duplicates, placeholders, gibberish, coherence) before it reaches human review.
+
 ## License
 
 © 2026 Surabhi Datta. **All rights reserved.** This repository is public for viewing and portfolio evaluation only — no permission is granted to use, copy, modify, or redistribute it without prior written consent. See [LICENSE](LICENSE).
