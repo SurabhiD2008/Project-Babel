@@ -1,6 +1,9 @@
 # ---- Dependencies ----
 node_modules/
 
+# ---- Build output (React app is built on Vercel) ----
+dist/
+
 # ---- Environment & secrets (NEVER commit) ----
 .env
 .env.*

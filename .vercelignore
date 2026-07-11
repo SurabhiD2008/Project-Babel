@@ -1,6 +1,9 @@
 # Dependencies — Vercel installs fresh on its Linux build machine
 node_modules
 
+# Build output — Vercel builds the React app itself
+dist
+
 # Secrets & local env — Vercel uses its own environment variables
 .env
 .env.*
