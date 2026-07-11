@@ -10,7 +10,7 @@
 
 It is one project in two parts:
 
-- **Frontend** (`web/`) — a **React** single-page app built with **Vite** and **React Router**. `web/src/data/data.js` is the bundled source of word data. *(The original zero-build vanilla-JS implementation is kept in `site/` for reference; the live site now serves the React build.)*
+- **Frontend** (`web/`) — a **React 18** single-page app built with **Vite** and **React Router**, fully responsive across mobile and desktop, with shareable/downloadable image cards and per-user saved-word bookmarking. `web/src/data/data.js` is the bundled source of word data.
 - **Backend** (`server/`) — Node.js + Express + Prisma, deployed as a **Vercel serverless function**. The live source of truth for accounts, saved data, submissions, analytics, and the word database. Uses **PostgreSQL (Neon)** in production and local dev; SQLite is still supported for a zero-setup local run of the API.
 
 The frontend calls the real backend first and falls back to `localStorage` and an in-browser engine when the API is unreachable, so it works either way. See the **[Architecture doc](docs/architecture.md)** for how it all fits together.

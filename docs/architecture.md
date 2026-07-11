@@ -53,7 +53,7 @@ vercel.json build + routing config
 
 ## Frontend (`web/`) — React + Vite
 
-A client-side SPA. No SSR: the app is Canvas-, physics-, and `localStorage`-heavy, which fits a plain client bundle far better than a server-rendered framework.
+A client-side SPA. No SSR: the app is Canvas-, physics-, and `localStorage`-heavy, which fits a plain client bundle far better than a server-rendered framework. The UI is **fully responsive** (verified from 375 px mobile through desktop) — a collapsing nav drawer, single-column layouts, and touch-friendly controls — plus keyboard navigation and `prefers-reduced-motion` support.
 
 ### Rendering & routing
 - **Vite** builds `web/src` into a static `web/dist` (one JS bundle + one CSS file + `index.html`).
@@ -77,8 +77,9 @@ Home · Atlas · Word Portrait · Name My Feeling · Composer · Language Map ·
 - **`hydrate.js`** — reconciles the bundled data with the DB (below).
 - **`store.js`**, **`ui.js`**, **`util.js`**, **`speech.js`** — localStorage wrapper, toasts, formatting, pronunciation.
 
-### Two subsystems worth calling out
-- **Image cards** — `card.js` draws the card on a canvas; `ModalContext` exposes Download / Share everywhere. Sharing uses the **Web Share API** with the actual PNG on supported devices, else a menu of social intents (WhatsApp/X/Instagram/…) plus copy-image / download.
+### Three things worth calling out
+- **Shareable image cards** — every word portrait, Name My Feeling result, and saved card renders a 1080×1080 PNG on a canvas (`card.js`); `ModalContext` exposes **Download** and **Share** from anywhere. Sharing uses the **Web Share API** with the actual PNG on supported devices, else a menu of social intents (WhatsApp/X/Instagram/…) plus copy-image / download.
+- **Personal bookmarks (per user)** — a signed-in user can **save words** — the ★ bookmark on any portrait — plus save image cards and keep their Name-My-Feeling history; the **Account** page lists all three. They persist server-side (`SavedWord` / `SavedCard` / `UserSearch`) with a `localStorage` fallback when offline.
 - **Language Map** — a force-directed SVG network. The O(n²) layout is precomputed once, then a `requestAnimationFrame` loop eases nodes toward per-mode targets and freezes when settled. It runs imperatively inside a `useEffect` on an SVG ref (React owns the container; the physics owns the nodes).
 
 ---
