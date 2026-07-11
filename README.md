@@ -4,16 +4,16 @@
 
 ** Live:** **[project-babel-five.vercel.app](https://project-babel-five.vercel.app)** — full-stack on Vercel + Neon Postgres.
 
-**Docs:** [Matching engine](docs/matching-engine.md) · [Cognitive distance](docs/cognitive-distance.md) · [Submission screening](docs/submission-screening.md)
+**Docs:** [Architecture](docs/architecture.md) · [Matching engine](docs/matching-engine.md) · [Cognitive distance](docs/cognitive-distance.md) · [Submission screening](docs/submission-screening.md)
 
 **Babel is an interactive atlas of untranslatable words** — feelings and concepts that exist in one language but have no direct equivalent in English. Describe a feeling in plain language and Babel finds the word for it, drawn from **500 words across 121 languages**, each rendered as a six-dimension portrait.
 
 It is one project in two parts:
 
-- **Frontend** (`site/`) — a zero-build, vanilla-JavaScript single-page app. Open `index.html` and it runs; `data.js` is the bundled source of word data.
-- **Backend** (`server/`) — Node.js + Express + Prisma. Serves the JSON API **and** the static site, and is the live source of truth for accounts, saved data, submissions, analytics, and the word database. Uses **PostgreSQL (Neon)** in production (and for local dev); SQLite is still supported for a zero-setup local run.
+- **Frontend** (`web/`) — a **React** single-page app built with **Vite** and **React Router**. `web/src/data/data.js` is the bundled source of word data. *(The original zero-build vanilla-JS implementation is kept in `site/` for reference; the live site now serves the React build.)*
+- **Backend** (`server/`) — Node.js + Express + Prisma, deployed as a **Vercel serverless function**. The live source of truth for accounts, saved data, submissions, analytics, and the word database. Uses **PostgreSQL (Neon)** in production and local dev; SQLite is still supported for a zero-setup local run of the API.
 
-The frontend calls the real backend first and falls back to `localStorage` and an in-browser engine when opened standalone, so the site works either way.
+The frontend calls the real backend first and falls back to `localStorage` and an in-browser engine when the API is unreachable, so it works either way. See the **[Architecture doc](docs/architecture.md)** for how it all fits together.
 
 ---
 
@@ -73,28 +73,34 @@ Fully responsive (verified at 375 px mobile and desktop), keyboard-navigable, `p
 
 ## Run it on your machine
 
-**Prerequisites:** [Node.js](https://nodejs.org/) 18+ (includes `npm`). No database or other services to install — it uses SQLite.
+**Prerequisites:** [Node.js](https://nodejs.org/) 18+ (includes `npm`). No database to install for local dev — the API uses SQLite by default.
 
-### Full stack (recommended — API + site together)
+The app is a **React frontend** (`web/`) talking to the **Express API** (`server/`) — run both:
+
+### 1. Start the API
 ```bash
 cd "Project Babel/server"
 npm install
-npm run setup     # generates the Prisma client, creates the SQLite DB, seeds 500 words
-npm start         # serves the API and the site at http://localhost:4600
+npm run setup     # Prisma client + DB + seed 500 words (SQLite by default)
+npm start         # API at http://localhost:4600
 ```
-Then open **http://localhost:4600** in your browser.
 
-- `npm run setup` is idempotent — re-running re-seeds the words from `../site/data.js`.
-- The **admin dashboard** is at `http://localhost:4600/#/admin`; the key is `ADMIN_KEY` in `server/.env` (default `babel-admin-2026`).
-- Optional: create `server/.env` to override defaults — `PORT`, `JWT_SECRET`, `ADMIN_KEY`, and `ANTHROPIC_API_KEY` (to enable the Claude engine).
-
-### Static only (no backend)
-The frontend runs standalone with a `localStorage` fallback — just open `site/index.html`, or serve the folder:
+### 2. Start the React frontend
 ```bash
-cd "Project Babel"
-npx serve site      # then open the printed http://localhost:xxxx URL
+cd "Project Babel/web"
+npm install
+npm run dev       # Vite dev server at http://localhost:5173 (proxies /api → :4600)
 ```
-Accounts and saved data are then local to the browser, and admin/live-database features are unavailable.
+Then open **http://localhost:5173** in your browser.
+
+- The **admin dashboard** is at `http://localhost:5173/#/admin`; the key is `ADMIN_KEY` in `server/.env` (default `babel-admin-2026`).
+- `server/.env` overrides: `PORT`, `JWT_SECRET`, `ADMIN_KEY`, and `ANTHROPIC_API_KEY` (to enable the Claude engine).
+- **Production build:** `cd web && npm run build` produces `web/dist` — the static bundle Vercel serves.
+
+### Frontend only (no backend)
+The React app works standalone with a `localStorage` + in-browser-engine fallback — run the Vite dev/preview server without the API. Accounts and admin/live-database features are then local or unavailable.
+
+*(The original zero-build vanilla-JS version still lives in `site/` and can be served with `npx serve site` — kept for reference; the deploy no longer uses it.)*
 
 ### Verify accuracy (optional)
 ```bash
@@ -106,34 +112,44 @@ node scripts/benchmark.js             # prints category-match rate + latency, wr
 ---
 
 ## Tech stack
-- **Frontend:** vanilla JS SPA (hash router, no build step), HTML Canvas (image cards), SVG (force-directed map + charts), Web Speech API (pronunciation), Web Share API.
-- **Backend:** Node.js + Express, Prisma ORM, SQLite (PostgreSQL-ready), JWT + bcrypt.
+- **Frontend:** **React 18 + Vite + React Router** (hash routing), HTML Canvas (image cards), SVG (force-directed map + charts), Web Speech API (pronunciation), Web Share API.
+- **Backend:** Node.js + Express (Vercel serverless function), Prisma ORM, PostgreSQL / Neon (SQLite-capable), JWT + bcrypt.
 - **AI:** offline TF-IDF cosine matcher; optional Claude (`claude-opus-4-8`) via `ANTHROPIC_API_KEY`.
 
 ## Project structure
 ```
 Project Babel/
-├─ site/                     # frontend (zero-build SPA)
-│  ├─ index.html             #   entry point (script/style cache-buster ?v=N)
-│  ├─ data.js                #   bundled word data (single source of truth)
-│  ├─ app.js                 #   app: router, pages, engine, share, hydration
-│  └─ styles.css
-├─ server/                   # backend (Express + Prisma + SQLite)
-│  ├─ src/index.js           #   API routes + static hosting + screening
-│  ├─ src/ai.js              #   offline matching engine (kept in sync with app.js)
-│  ├─ prisma/schema.prisma   #   data model
+├─ web/                      # frontend — React + Vite (deployed)
+│  ├─ index.html             #   Vite entry
+│  ├─ vite.config.js         #   dev /api proxy, build config
+│  └─ src/
+│     ├─ main.jsx App.jsx    #   entry, router + providers
+│     ├─ pages/              #   the 11 route pages
+│     ├─ components/         #   Nav, WordCard, CardModal, ShareMenu, …
+│     ├─ context/            #   Auth, Modal (cards), Words (live count/hydration)
+│     ├─ lib/                #   engine, api, card, feeling, hydrate, store, util
+│     └─ data/               #   bundled word data (data.js) + adapter
+├─ api/
+│  └─ index.js               #   Vercel serverless entry → wraps the Express app
+├─ server/                   # backend (Express + Prisma)
+│  ├─ src/index.js           #   API routes + screening + word-add-on-accept
+│  ├─ src/ai.js              #   offline matching engine (API side)
+│  ├─ prisma/schema.prisma   #   data model (PostgreSQL)
 │  ├─ scripts/               #   benchmark.js, clear-feeling-cache.js
-│  ├─ results/metrics.json   #   measured accuracy (read by the site)
-│  └─ README.md              #   backend/API reference
+│  └─ results/metrics.json   #   measured accuracy (read by the site)
+├─ site/                     # original vanilla-JS frontend (reference only)
+├─ vercel.json               # builds web/dist, routes /api/* → the function
+├─ docs/                     # architecture + matching-engine + distance + screening
 └─ README.md                 # this file
 ```
 
-> **Note on the matching engine:** the offline engine exists in two places kept in sync by hand — `server/src/ai.js` (used by the API) and the fallback in `site/app.js` (used when standalone). Change them together, then clear the feeling cache and re-run the benchmark.
+> **Note on the matching engine:** the offline engine exists in **three** places kept in sync by hand — `server/src/ai.js` (the API), `web/src/lib/engine.js` (the React fallback), and `site/app.js` (the legacy vanilla version). Change them together, then clear the feeling cache and re-run the benchmark.
 
 ## Documentation
 
 Deeper write-ups of how the interesting parts work live in [`docs/`](docs/):
 
+- **[Architecture](docs/architecture.md)** — the whole system end to end: the React frontend, the serverless Express API, the Neon database, data flow, the offline/fallback design, and deployment.
 - **[Matching engine](docs/matching-engine.md)** — how "Name My Feeling" and the Composer turn a described feeling into a word: the offline TF-IDF cosine engine, the scoring formula, and the optional Claude upgrade.
 - **[Cognitive distance](docs/cognitive-distance.md)** — how each word's "untranslatability" score is calculated: the curatorial base score and the four-component algorithmic composite.
 - **[Submission screening](docs/submission-screening.md)** — the automated rules a community-submitted word passes through (duplicates, placeholders, gibberish, coherence) before it reaches human review.

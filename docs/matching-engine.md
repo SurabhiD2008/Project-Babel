@@ -4,7 +4,7 @@
 
 By default this runs on an **offline, deterministic engine** — no LLM. It's a from-scratch **TF-IDF cosine-similarity** model over the word definitions. (If an `ANTHROPIC_API_KEY` is configured on the server it transparently upgrades to Claude with the same JSON contract, and the UI discloses which engine answered.)
 
-> **Two copies, kept in sync.** The engine lives in **[`server/src/ai.js`](../server/src/ai.js)** (used by the API) and is mirrored in **[`site/app.js`](../site/app.js)** (the fallback used when the site is opened standalone). They implement the same algorithm and must be changed together.
+> **Kept in sync by hand.** The engine lives in three places implementing the same algorithm: **[`server/src/ai.js`](../server/src/ai.js)** (used by the API), **[`web/src/lib/engine.js`](../web/src/lib/engine.js)** (the React app's in-browser fallback), and **[`site/app.js`](../site/app.js)** (the legacy vanilla version). Change them together.
 
 ---
 

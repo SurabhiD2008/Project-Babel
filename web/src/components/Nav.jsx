@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { NAV } from "../lib/util.js";
-import { WORDS, LANGUAGES } from "../data/index.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useWords } from "../context/WordsContext.jsx";
 import AuthModal from "./AuthModal.jsx";
 
 export default function Nav() {
@@ -10,6 +10,7 @@ export default function Nav() {
   const [authOpen, setAuthOpen] = useState(false);
   const loc = useLocation();
   const { user, logout } = useAuth();
+  const { wordCount } = useWords();
   const onAdmin = loc.pathname.startsWith("/admin");
 
   return (
@@ -25,7 +26,7 @@ export default function Nav() {
               </NavLink>
             ))}
           </div>
-          <div className="nav-pulse"><span className="pulse-dot"></span>{WORDS.length} words indexed</div>
+          <div className="nav-pulse"><span className="pulse-dot"></span>{wordCount} words indexed</div>
           <div className="nav-account">
             {onAdmin ? (
               <button className="btn btn-amber" onClick={() => { sessionStorage.removeItem("babel:adminKey"); window.location.reload(); }}>Sign Out</button>

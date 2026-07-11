@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { ModalProvider } from "./context/ModalContext.jsx";
+import { WordsProvider, useWords } from "./context/WordsContext.jsx";
 import Nav from "./components/Nav.jsx";
 import Home from "./pages/Home.jsx";
 import Atlas from "./pages/Atlas.jsx";
@@ -21,31 +22,44 @@ function ScrollToTop() {
   return null;
 }
 
+function Shell() {
+  // `version` bumps when the DB differs from the bundle; keying <Routes> remounts
+  // the current page so it recomputes from the freshly-merged word arrays.
+  const { version } = useWords();
+  return (
+    <>
+      <div className="grid-bg" aria-hidden="true"></div>
+      <div className="shell">
+        <Nav />
+        <main id="app">
+          <ScrollToTop />
+          <Routes key={version}>
+            <Route path="/" element={<Home />} />
+            <Route path="/atlas" element={<Atlas />} />
+            <Route path="/word/:slug" element={<WordPortrait />} />
+            <Route path="/name-my-feeling" element={<NameMyFeeling />} />
+            <Route path="/map" element={<LanguageMap />} />
+            <Route path="/theory" element={<Theory />} />
+            <Route path="/compose" element={<Composer />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/sources" element={<Sources />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="*" element={<Home />} />
+          </Routes>
+        </main>
+      </div>
+    </>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <ModalProvider>
-        <div className="grid-bg" aria-hidden="true"></div>
-        <div className="shell">
-          <Nav />
-          <main id="app">
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/atlas" element={<Atlas />} />
-              <Route path="/word/:slug" element={<WordPortrait />} />
-              <Route path="/name-my-feeling" element={<NameMyFeeling />} />
-              <Route path="/map" element={<LanguageMap />} />
-              <Route path="/theory" element={<Theory />} />
-              <Route path="/compose" element={<Composer />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/sources" element={<Sources />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="*" element={<Home />} />
-            </Routes>
-          </main>
-        </div>
+        <WordsProvider>
+          <Shell />
+        </WordsProvider>
       </ModalProvider>
     </AuthProvider>
   );
