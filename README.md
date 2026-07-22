@@ -17,25 +17,6 @@ The frontend calls the real backend first and falls back to `localStorage` and a
 
 ---
 
-## Screenshots
-
-**[Try the live demo](https://project-babel-five.vercel.app)**
-
-A quick tour of the interface:
-
-- **Home** — describe a feeling and let Babel name it
-- **Name My Feeling** — the closest untranslatable word, with a three-line explanation and cross-language alternatives
-- **Word portrait** — each word across six dimensions, with a downloadable / shareable image card
-- **Language map** — the whole atlas as a force-directed network, coloured by emotional cluster
-
-| Home | Name My Feeling |
-|------|-----------------|
-| ![Home](screenshots/home.png) | ![Name My Feeling](screenshots/name-my-feeling.png) |
-| **Word portrait** | **Atlas** |
-| ![Word portrait](screenshots/word-portrait.png) | ![Atlas](screenshots/atlas.png) |
-
----
-
 ## Features
 
 ### The eight pages
@@ -68,46 +49,6 @@ The bundled `data.js` seeds the atlas so the site works standalone, but on boot 
 
 ### Everywhere
 Fully responsive (verified at 375 px mobile and desktop), keyboard-navigable, `prefers-reduced-motion` aware, with pronunciation audio via the Web Speech API.
-
----
-
-## Run it on your machine
-
-**Prerequisites:** [Node.js](https://nodejs.org/) 18+ (includes `npm`). No database to install for local dev — the API uses SQLite by default.
-
-The app is a **React frontend** (`web/`) talking to the **Express API** (`server/`) — run both:
-
-### 1. Start the API
-```bash
-cd "Project Babel/server"
-npm install
-npm run setup     # Prisma client + DB + seed 500 words (SQLite by default)
-npm start         # API at http://localhost:4600
-```
-
-### 2. Start the React frontend
-```bash
-cd "Project Babel/web"
-npm install
-npm run dev       # Vite dev server at http://localhost:5173 (proxies /api → :4600)
-```
-Then open **http://localhost:5173** in your browser.
-
-- The **admin dashboard** is at `http://localhost:5173/#/admin`; the key is `ADMIN_KEY` in `server/.env` (default `babel-admin-2026`).
-- `server/.env` overrides: `PORT`, `JWT_SECRET`, `ADMIN_KEY`, and `ANTHROPIC_API_KEY` (to enable the Claude engine).
-- **Production build:** `cd web && npm run build` produces `web/dist` — the static bundle Vercel serves.
-
-### Frontend only (no backend)
-The React app works standalone with a `localStorage` + in-browser-engine fallback — run the Vite dev/preview server without the API. Accounts and admin/live-database features are then local or unavailable.
-
-*(The original zero-build vanilla-JS version still lives in `site/` and can be served with `npx serve site` — kept for reference; the deploy no longer uses it.)*
-
-### Verify accuracy (optional)
-```bash
-cd "Project Babel/server"
-node scripts/clear-feeling-cache.js   # clear cached feeling results
-node scripts/benchmark.js             # prints category-match rate + latency, writes results/metrics.json
-```
 
 ---
 
