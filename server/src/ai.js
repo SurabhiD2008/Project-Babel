@@ -27,8 +27,11 @@ const LEX = {
 };
 
 /* Generic filler/function words that carry no emotional signal — excluded from
-   the definition-overlap bonus so common words don't create spurious matches. */
-const STOP = new Set(["feeling","feelings","feel","feels","felt","like","that","this","with","your","just","really","something","someone","somewhere","anything","everything","nothing","never","always","them","they","when","what","which","were","been","have","from","into","about","would","could","should","there","their","other","things","thing","some","much","very","more","most","being","because","while","after","before","kind","sort","even","than","then","over","only","also","here","where","those","these","such","without","within","want","wants","make","makes","know","knows"]);
+   the definition-overlap bonus so common words don't create spurious matches.
+   NOTE: "never" and "been" are deliberately NOT stopped — in this corpus the
+   negation/absence ("a place you've never been") is load-bearing meaning, and
+   dropping them made "longing for a place I've never been" miss Kaukokaipuu. */
+const STOP = new Set(["feeling","feelings","feel","feels","felt","like","that","this","with","your","just","really","something","someone","somewhere","anything","everything","nothing","always","them","they","when","what","which","were","have","from","into","about","would","could","should","there","their","other","things","thing","some","much","very","more","most","being","because","while","after","before","kind","sort","even","than","then","over","only","also","here","where","those","these","such","without","within","want","wants","make","makes","know","knows"]);
 
 const esc = (s) => String(s);
 

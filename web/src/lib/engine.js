@@ -18,7 +18,11 @@ const LEX = {
   philos: ["meaning", "purpose", "life", "balance", "world", "existence", "soul", "being", "why", "imperfect", "impermanence", "order", "chaos", "reason", "alive", "perfection", "virtue", "honour", "honor", "fate", "destiny", "matters", "pointless", "meaningless", "actually matters", "acceptance", "control the outcome", "understood only by", "existential", "mortality", "absurdity", "consciousness", "awareness", "transcendence", "interconnected", "oneness", "equanimity", "surrender", "letting go", "serenity", "calm", "peace", "peaceful", "tranquil", "patience", "wisdom", "ineffable"],
 };
 
-const STOP = new Set(["feeling", "feelings", "feel", "feels", "felt", "like", "that", "this", "with", "your", "just", "really", "something", "someone", "somewhere", "anything", "everything", "nothing", "never", "always", "them", "they", "when", "what", "which", "were", "been", "have", "from", "into", "about", "would", "could", "should", "there", "their", "other", "things", "thing", "some", "much", "very", "more", "most", "being", "because", "while", "after", "before", "kind", "sort", "even", "than", "then", "over", "only", "also", "here", "where", "those", "these", "such", "without", "within", "want", "wants", "make", "makes", "know", "knows"]);
+// NOTE: "never" and "been" are deliberately NOT stopped — in this corpus the
+// negation/absence ("a place you've never been") is load-bearing meaning, and
+// dropping them made "longing for a place I've never been" miss Kaukokaipuu.
+// Keep this list in sync with server/src/ai.js.
+const STOP = new Set(["feeling", "feelings", "feel", "feels", "felt", "like", "that", "this", "with", "your", "just", "really", "something", "someone", "somewhere", "anything", "everything", "nothing", "always", "them", "they", "when", "what", "which", "were", "have", "from", "into", "about", "would", "could", "should", "there", "their", "other", "things", "thing", "some", "much", "very", "more", "most", "being", "because", "while", "after", "before", "kind", "sort", "even", "than", "then", "over", "only", "also", "here", "where", "those", "these", "such", "without", "within", "want", "wants", "make", "makes", "know", "knows"]);
 
 const COS_W = 100, CAT_W = 8;
 

@@ -315,6 +315,10 @@ async function log(kind, data = {}) {
   } catch { /* analytics is best-effort */ }
 }
 
+/* Bump when the matching engine changes so previously-cached AiCache responses
+   are bypassed automatically on deploy (old rows become unreachable keys). */
+const AI_CACHE_VERSION = "v2-neverbeen";
+
 const api = express.Router();
 
 /* ---------- GET /api/words — paginated, filterable, sortable ---------- */
@@ -395,7 +399,7 @@ api.post("/feelings/search", optionalAuth, asyncH(async (req, res) => {
   if (input.length < 4) return res.status(400).json({ error: "Describe the feeling a little more." });
   const started = Date.now();
 
-  const hash = sha256("feeling:" + input.toLowerCase());
+  const hash = sha256(`feeling:${AI_CACHE_VERSION}:` + input.toLowerCase());
   const cached = await prisma.aiCache.findUnique({ where: { inputHash: hash } });
   const result = cached ? JSON.parse(cached.response) : await AI.claudeFeelingSearch(input, WORD_CACHE);
   if (!cached) await prisma.aiCache.create({ data: { inputHash: hash, kind: "feeling", response: JSON.stringify(result) } });
@@ -413,7 +417,7 @@ api.post("/feelings/search", optionalAuth, asyncH(async (req, res) => {
 api.post("/compose/analyse", asyncH(async (req, res) => {
   const text = (req.body.text || "").trim();
   if (text.length < 8) return res.status(400).json({ error: "Write a little more to analyse." });
-  const hash = sha256("compose:" + text.toLowerCase());
+  const hash = sha256(`compose:${AI_CACHE_VERSION}:` + text.toLowerCase());
   const cached = await prisma.aiCache.findUnique({ where: { inputHash: hash } });
   if (cached) return res.json({ found: JSON.parse(cached.response), cached: true });
   const found = AI.analyseText(text, WORD_CACHE);
