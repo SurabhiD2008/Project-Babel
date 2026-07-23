@@ -6,7 +6,7 @@ import { NAV } from "../lib/util.js";
 import { toast } from "../lib/ui.js";
 import Footer from "../components/Footer.jsx";
 
-const STACK = ["React (Vite) SPA", "Node.js + Express", "Prisma ORM", "PostgreSQL (Neon)", "JWT + bcrypt auth", "Claude API (optional)", "Offline scoring engine", "Force-directed SVG network", "HTML Canvas", "Trie search"];
+const STACK = ["React (Vite) SPA", "Node.js + Express", "Prisma ORM", "PostgreSQL (Neon)", "JWT + bcrypt auth", "Claude API", "Offline scoring engine", "Force-directed SVG network", "HTML Canvas", "Trie search"];
 const DEFAULT_STATUS = "Screened for duplicates, accuracy, and vague entries, then reviewed by hand before addition.";
 
 export default function About() {

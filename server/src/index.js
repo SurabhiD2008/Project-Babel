@@ -138,6 +138,100 @@ function coherentExplanation(why) {
   const wordLike = words.filter((w) => VOWEL.test(w)).length; // vowel-bearing tokens look real
   return wordLike >= Math.max(3, Math.ceil(words.length * 0.6));
 }
+/* ---------- online meaning verification (internet-sourced accuracy check) ----------
+   Looks the word up in a LIVE reference source (Wiktionary) and, when possible,
+   judges whether the contributor's stated meaning actually matches. Deliberately
+   conservative: it only REJECTS on a confident contradiction, because the atlas is
+   built from rare/untranslatable words that are often absent from dictionaries — an
+   unverifiable word is passed on to human review, never auto-rejected. Every network
+   call has a timeout and fails soft, so the submission endpoint never breaks. */
+async function fetchJSON(url, opts = {}, ms = 6000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, { ...opts, signal: ctrl.signal });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+  finally { clearTimeout(t); }
+}
+function stripHTML(s) {
+  return String(s || "").replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/gi, " ").replace(/\s+/g, " ").trim();
+}
+// Best-effort Wiktionary lookup → array of {lang, gloss}. Tries a few casings of
+// the spelling; the first title that yields definitions wins.
+async function fetchWiktionaryGlosses(word) {
+  const raw = String(word || "").trim();
+  if (!raw) return [];
+  const titles = Array.from(new Set([raw, raw.toLowerCase(), raw.charAt(0).toUpperCase() + raw.slice(1)]));
+  const out = [];
+  for (const title of titles) {
+    const url = `https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(title)}`;
+    const data = await fetchJSON(url, { headers: { "Api-User-Agent": "ProjectBabel/1.0 (untranslatable-words atlas; submission screening)" } });
+    if (!data) continue;
+    for (const code of Object.keys(data)) {
+      for (const entry of data[code] || []) {
+        const langName = entry.language || code;
+        for (const def of entry.definitions || []) {
+          const g = stripHTML(def.definition);
+          if (g) out.push({ lang: langName, gloss: g });
+        }
+      }
+    }
+    if (out.length) break;
+  }
+  return out.slice(0, 12);
+}
+// Uses the optional Claude key to judge the claim against the fetched evidence.
+// Returns {verdict,reason} or null when unavailable/unparseable.
+async function claudeJudgeMeaning({ word, language, why, evidence }) {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return null;
+  try {
+    const model = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
+    const system =
+      "You verify community submissions to an atlas of untranslatable words. Decide whether the contributor's stated meaning is essentially correct for the given word in the given language. " +
+      "Prefer the supplied dictionary evidence; you may use your own knowledge of the language to corroborate. " +
+      "Be conservative: many entries are rare, poetic, or dialectal and are legitimately absent from dictionaries. " +
+      'Return STRICT JSON {"verdict":"match"|"mismatch"|"unknown","reason":"one short sentence"}. ' +
+      'Use "mismatch" ONLY if you are confident the word does NOT mean what is claimed (the claim clearly describes something else). If unsure or unverifiable, use "unknown".';
+    const user = `WORD: ${word}\nLANGUAGE: ${language}\nCONTRIBUTOR'S CLAIMED MEANING: ${why}\n\nDICTIONARY EVIDENCE (Wiktionary; may be empty or include other languages):\n${evidence || "(none found)"}`;
+    const data = await fetchJSON("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model, max_tokens: 300, system, messages: [{ role: "user", content: user }] }),
+    }, 12000);
+    const txt = data?.content?.[0]?.text || "";
+    const parsed = JSON.parse(txt.match(/\{[\s\S]*\}/)[0]);
+    return ["match", "mismatch", "unknown"].includes(parsed.verdict) ? parsed : null;
+  } catch { return null; }
+}
+// Fallback when Claude isn't configured: compare claim tokens to the glosses. Only
+// a confident contradiction (the word is well-documented yet shares no content word
+// with the description) counts as a mismatch.
+function heuristicMeaningVerdict(why, glosses) {
+  if (!glosses.length) return { verdict: "unknown", reason: "not found in reference sources" };
+  const STOP = new Set("the a an of to and or for in on at by is are be as with that this it its from into you your they them not but so too very often only used term word sense meaning something someone way feeling state being person thing which who whom whose when where while".split(/\s+/));
+  const toks = (s) => (String(s || "").toLowerCase().match(/[a-zà-ÿ']{3,}/g) || []).filter((w) => !STOP.has(w));
+  const claim = new Set(toks(why));
+  const gloss = new Set(toks(glosses.map((g) => g.gloss).join(" ")));
+  if (!claim.size || gloss.size < 4) return { verdict: "unknown", reason: "insufficient reference text to compare" };
+  let overlap = 0;
+  for (const t of claim) if (gloss.has(t)) overlap++;
+  if (overlap === 0) return { verdict: "mismatch", reason: "reference definitions share nothing with the stated meaning" };
+  return { verdict: "match", reason: "consistent with reference definitions" };
+}
+async function verifyMeaningOnline({ word, language, why }) {
+  try {
+    const glosses = await fetchWiktionaryGlosses(word);
+    const evidence = glosses.map((g) => `- (${g.lang}) ${g.gloss}`).join("\n").slice(0, 2000);
+    const judged = await claudeJudgeMeaning({ word, language, why, evidence });
+    const verdict = judged || heuristicMeaningVerdict(why, glosses);
+    return { ...verdict, sourced: glosses.length > 0 };
+  } catch {
+    return { verdict: "unknown", reason: "verification unavailable", sourced: false };
+  }
+}
 async function screenSubmission({ word, language, why }) {
   const nWord = normalizeText(word);
   const nLang = normalizeText(language);
@@ -158,6 +252,11 @@ async function screenSubmission({ word, language, why }) {
   const pending = await prisma.submission.findMany({ where: { status: { in: ["pending", "flagged"] } } });
   const dupPending = pending.find((s) => normalizeText(s.word) === nWord && normalizeText(s.language) === nLang);
   if (dupPending) return { ok: false, status: "rejected_duplicate", note: "This word has already been submitted and is awaiting review." };
+
+  // Internet-sourced meaning check — reject only on a confident contradiction.
+  const meaning = await verifyMeaningOnline({ word, language, why });
+  if (meaning.verdict === "mismatch")
+    return { ok: false, status: "rejected_inaccurate", note: `Checked against reference sources, "${word}" doesn't appear to mean what's described (${meaning.reason}). If this is right, include the native form or a source and resubmit for human review.` };
 
   // Soft accuracy signals — not hard rejections, but flag for a closer human look.
   const reasons = [];
