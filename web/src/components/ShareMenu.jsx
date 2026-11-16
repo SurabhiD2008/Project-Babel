@@ -3,10 +3,12 @@ import { API } from "../lib/api.js";
 import { buildShareIntents, SHARE_APPS, SHARE_APP_URLS, cardShareText, cardShareUrl, renderCardCanvas, canvasBlob } from "../lib/card.js";
 import { useModal } from "../context/ModalContext.jsx";
 import { toast } from "../lib/ui.js";
+import { useOverlay } from "../lib/useOverlay.js";
 
 export default function ShareMenu({ slug, source, onClose }) {
   const w = WORDS_BY_SLUG[slug];
   const { download } = useModal();
+  useOverlay(onClose);
   if (!w) return null;
   const shareUrl = cardShareUrl(slug);
   const text = cardShareText(w);

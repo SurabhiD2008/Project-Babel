@@ -70,12 +70,19 @@ Home · Atlas · Word Portrait · Name My Feeling · Composer · Language Map ·
 
 ### Client libraries (`src/lib/`)
 - **`data/`** — `data.js` is the bundled 500-word dataset (copied verbatim from the original); `data/index.js` re-exports it as ES modules (`WORDS`, `WORDS_BY_SLUG`, `VISIBLE_WORDS`, `CATEGORIES`, …).
-- **`engine.js`** — the offline **TF-IDF cosine** matching engine (`localFeelingSearch`, `analyseText`, `recommend`, `CogDistance`). See [matching-engine.md](matching-engine.md).
+- **`engine.js`** — the offline matching engine — field-weighted BM25 + a concept thesaurus (`localFeelingSearch`, `analyseText`, `meaningSearch`, `recommend`, `CogDistance`). See [matching-engine.md](matching-engine.md).
 - **`api.js`** — the backend client: `resolveApiBase()` probes `/api` then `localhost:4600`, `apiFetch()` attaches the JWT, and an `API` object wraps auth / saved words / cards / history / submissions with **localStorage fallbacks**.
+- **`search.js`** — the Atlas search: relevance-ranked, accent-insensitive, typo-tolerant; falls through to the meaning engine for plain descriptions.
 - **`feeling.js`** — orchestrates Name My Feeling / Composer: backend first, offline engine as fallback.
 - **`card.js`** — renders the 1080×1080 word card to a `<canvas>` and provides download / Web-Share / share-menu helpers.
 - **`hydrate.js`** — reconciles the bundled data with the DB (below).
 - **`store.js`**, **`ui.js`**, **`util.js`**, **`speech.js`** — localStorage wrapper, toasts, formatting, pronunciation.
+
+### Motion & navigation
+- **Ghost word** — `components/GhostWord.jsx` holds one large word in its native script on a fixed layer behind the whole site: the word you're reading on a portrait, the word Name My Feeling just found, λέξις in the Composer, λόγος in the essay, the word of the day elsewhere. It cross-fades when it changes.
+- **Scroll** — `ScrollManager` in `App.jsx` opens a new page at the top instantly and restores your position on Back/Forward; the Atlas remembers its search, filters and loaded pages for the same trip. Sections below the fold ease in via one `IntersectionObserver`.
+- **Overlays** — `lib/useOverlay.js` gives every modal Escape-to-close, scroll lock, and focus return.
+- All motion is opacity/transform only and is switched off under `prefers-reduced-motion`.
 
 ### Three things worth calling out
 - **Shareable image cards** — every word portrait, Name My Feeling result, and saved card renders a 1080×1080 PNG on a canvas (`card.js`); `ModalContext` exposes **Download** and **Share** from anywhere. Sharing uses the **Web Share API** with the actual PNG on supported devices, else a menu of social intents (WhatsApp/X/Instagram/…) plus copy-image / download.
@@ -94,7 +101,7 @@ An **Express** app that is also a **Vercel serverless function**.
 
 ### What it does
 - **Words** — `GET /api/words` (paginated/filterable), `/words/:slug` (full portrait), `/words/all` (the list the frontend hydrates from), `/categories`.
-- **Matching** — `POST /api/feelings/search` and `/compose/analyse` run `server/src/ai.js` (the same TF-IDF engine), or Claude if `ANTHROPIC_API_KEY` is set. The `engine` field is returned so the UI can disclose which answered.
+- **Matching** — `POST /api/feelings/search` and `/compose/analyse` run `server/src/ai.js` (the same offline engine), or Claude if `ANTHROPIC_API_KEY` is set. The `engine` field is returned so the UI can disclose which answered.
 - **Accounts** — JWT + bcrypt (`/auth/*`, `/user/*`): saved words, saved cards, and search history, all per-user.
 - **Submissions** — `POST /api/submissions` runs `screenSubmission()` (duplicates, placeholders, gibberish, coherence, unknown-language flag) before queuing. See [submission-screening.md](submission-screening.md).
 - **Admin** (gated by `ADMIN_KEY`) — usage metrics, a moderation queue, **accept-inserts-a-real-Word**, and word delete.
@@ -123,7 +130,7 @@ If the API is unreachable it's a no-op and the app runs on the bundled 500 words
 
 **Page load** → Vercel serves `web/dist/index.html` + the JS/CSS bundle → React mounts, renders instantly from the bundled data → `WordsContext` hydrates from the DB in the background.
 
-**Name My Feeling** → `feeling.js` `POST /api/feelings/search` → backend runs the TF-IDF engine (or Claude), logs history for signed-in users, returns `{bestMatch, score, explanation, sapirWhorf, alternates}` → if the backend is down, the identical **in-browser** engine answers instead.
+**Name My Feeling** → `feeling.js` `POST /api/feelings/search` → backend runs the offline engine (or Claude), logs history for signed-in users, returns `{bestMatch, score, explanation, sapirWhorf, alternates}` → if the backend is down, the identical **in-browser** engine answers instead.
 
 **Submit a word** → `POST /api/submissions` → `screenSubmission()` accepts / flags / rejects → stored as a `Submission` row → surfaces in the admin queue.
 
@@ -144,6 +151,6 @@ For local development the same API runs on SQLite with zero setup (`server/` `np
 ---
 
 ## See also
-- [Matching engine](matching-engine.md) — the TF-IDF cosine model in depth.
+- [Matching engine](matching-engine.md) — the BM25 + concept-thesaurus model in depth.
 - [Cognitive distance](cognitive-distance.md) — how the "untranslatability" score is computed.
 - [Submission screening](submission-screening.md) — the community-contribution rules.

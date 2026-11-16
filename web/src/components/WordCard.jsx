@@ -4,10 +4,11 @@ import DistBar from "./DistBar.jsx";
 import CatTag from "./CatTag.jsx";
 import SpeakButton from "./SpeakButton.jsx";
 
-export default function WordCard({ w }) {
+// `i` is the card's position in its group — cards arrive one after another.
+export default function WordCard({ w, i = 0 }) {
   const saved = API.isSaved(w.slug);
   return (
-    <Link className="card page-fade" to={`/word/${w.slug}`} style={{ display: "block" }}>
+    <Link className="card page-fade" to={`/word/${w.slug}`} style={{ display: "block", animationDelay: Math.min(i, 11) * 35 + "ms" }}>
       <span className="glow" />
       <div className="wc-head">
         <span className="wc-meta">{w.language} · {w.family}</span>

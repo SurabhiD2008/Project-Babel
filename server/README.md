@@ -9,8 +9,8 @@ Ships with **SQLite** so it runs with zero external database setup; switching to
 - **Prisma ORM** — schema, migrations, queries
 - **SQLite** (dev) / **PostgreSQL** (prod) — datastore
 - **JWT + bcrypt** — email/password auth
-- **AI engine** — offline semantic matcher (**TF-IDF cosine similarity** over word
-  definitions + emotion-category resonance, with light stemming) using the same JSON
+- **AI engine** — offline semantic matcher (**field-weighted BM25** over word
+  definitions + a hand-built concept thesaurus + emotion-category resonance, with light stemming) using the same JSON
   contract as the Claude path; set `ANTHROPIC_API_KEY` to upgrade to `claude-opus-4-8`
 - **AI response cache** — SHA-256-keyed rows in the `AiCache` table (Redis substitute)
 

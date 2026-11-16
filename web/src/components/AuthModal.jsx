@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { toast } from "../lib/ui.js";
+import { useOverlay } from "../lib/useOverlay.js";
 
 export default function AuthModal({ onClose }) {
   const { login, register } = useAuth();
@@ -10,6 +11,7 @@ export default function AuthModal({ onClose }) {
   const [pass, setPass] = useState("");
   const [busy, setBusy] = useState(false);
   const isReg = mode === "register";
+  useOverlay(onClose);
 
   async function submit() {
     if (isReg && !name.trim()) return toast("Please enter your name");
@@ -25,7 +27,7 @@ export default function AuthModal({ onClose }) {
   return (
     <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal">
-        <button className="close" onClick={onClose}>×</button>
+        <button className="close" aria-label="Close" onClick={onClose}>×</button>
         <span className="eyebrow">Account · saved collections</span>
         <h3 style={{ margin: "8px 0 4px" }}>{isReg ? "Create your Babel account" : "Sign in to Babel"}</h3>
         <p style={{ fontSize: 12, marginBottom: 16 }}>

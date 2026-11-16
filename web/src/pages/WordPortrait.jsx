@@ -71,9 +71,8 @@ export default function WordPortrait() {
     <div className="page-fade">
       <section className="portrait-mast">
         <div className="wrap">
-          <div className="ghost-word" style={{ right: "-2%", top: "10%" }}>{w.native || w.word}</div>
           <div className="breadcrumb">
-            <Link to="/atlas">Atlas</Link> <span>/</span> <Link to="/atlas">{categoryName(w.category)}</Link> <span>/</span>{" "}
+            <Link to="/atlas">Atlas</Link> <span>/</span> <Link to={`/atlas?category=${w.category}`}>{categoryName(w.category)}</Link> <span>/</span>{" "}
             <span style={{ color: "var(--amber)" }}>{w.word}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
@@ -181,7 +180,7 @@ export default function WordPortrait() {
 
         <div className="section">
           <div className="label label-line">If you felt {w.word}, you might feel…</div>
-          <div className="nearby-strip">{recs.map((r) => <WordCard key={r.slug} w={r} />)}</div>
+          <div className="nearby-strip">{recs.map((r, i) => <WordCard key={r.slug} w={r} i={i} />)}</div>
         </div>
 
         <div className="label label-line" style={{ marginTop: "2rem" }}>Cognitive-distance breakdown</div>

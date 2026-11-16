@@ -6,7 +6,7 @@ import { localFeelingSearch, analyseText } from "./engine.js";
 export async function composeAnalyse(text) {
   try {
     const r = await apiFetch("/compose/analyse", { method: "POST", body: JSON.stringify({ text }) });
-    return r.found;
+    return (r.found || []).filter((f) => WORDS_BY_SLUG[f.slug]);
   } catch (e) {
     return analyseText(text);
   }
@@ -18,12 +18,15 @@ export async function composeAnalyse(text) {
 export async function feelingSearch(text) {
   try {
     const r = await apiFetch("/feelings/search", { method: "POST", body: JSON.stringify({ input: text }) });
+    // A word the server knows but this bundle hasn't hydrated yet can't be
+    // rendered — answer locally instead of showing a broken card.
+    if (!r.bestMatch || !WORDS_BY_SLUG[r.bestMatch.slug]) throw new Error("unknown word");
     return {
       bestMatch: WORDS_BY_SLUG[r.bestMatch.slug],
       matchScore: r.matchScore,
       explanation: r.explanation,
       sapirWhorf: r.sapirWhorf,
-      alternates: r.alternates.map((a) => ({ ...WORDS_BY_SLUG[a.slug], match: a.match, word: a.word, lang: a.lang, slug: a.slug })),
+      alternates: (r.alternates || []).filter((a) => WORDS_BY_SLUG[a.slug]).map((a) => ({ ...WORDS_BY_SLUG[a.slug], match: a.match, word: a.word, lang: a.lang, slug: a.slug })),
       engine: r.engine || "offline",
       cached: r.cached,
       responseMs: r.responseMs,

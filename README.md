@@ -23,7 +23,7 @@ The frontend calls the real backend first and falls back to `localStorage` and a
 | Page | What it does |
 |---|---|
 | **Home** `#/` | Manifesto hero, a live "describe a feeling" search box, word-of-the-day, and a clickable word ticker — **click any ticker word to open its shareable image card**. |
-| **Atlas** `#/atlas` | All words, browsable and filterable by emotion category, language family, cognitive-distance band, and script; sortable; instant trie-based search. |
+| **Atlas** `#/atlas` | All words, browsable and filterable by emotion category, language family, cognitive-distance band, and script; sortable; instant relevance-ranked search (accent-insensitive, typo-tolerant, and able to answer a plain description). |
 | **Word Portrait** `#/word/:slug` | A full six-dimension portrait per word (cognitive science, cultural origin, linguistic structure, nearest English, philosophy, art), cross-cultural notes, closest words in other languages, a recommendation strip, "Ask Babel", pronunciation audio, and image-card **Download / Share**. |
 | **Name My Feeling** `#/name-my-feeling` | The centrepiece. Describe a feeling; the engine interprets the emotion and returns the closest word with a **three-line explanation** (what you're feeling / why this word / how it fits) plus cross-language alternatives — **click any alternative to open its image card**. |
 | **Language Map** `#/map` | The whole atlas as a force-directed SVG network (also a language-family tree), coloured by emotional cluster. |
@@ -37,7 +37,7 @@ Plus **Sources** `#/sources` (honest provenance + measured accuracy), **Account*
 Every word portrait, Name My Feeling result, and saved card can be **downloaded** as a 1080×1080 PNG or **shared** directly. Sharing uses the native Web Share API (the actual image → any app) on supported devices, and otherwise a share menu of popular platforms: **WhatsApp, X/Twitter, Facebook, Threads, Telegram, LinkedIn, Pinterest, Tumblr, Reddit, Email**, plus image-first apps **Instagram, Snapchat, TikTok, Discord** (hands you the image and opens the app), and copy-image / download fallbacks. The canonical share URL is always `https://` for security.
 
 ### The matching engine (Name My Feeling & Composer)
-The offline engine ranks words by **TF-IDF cosine similarity** between your input and each word's definition (with light stemming so "visit" matches "visited"), combined with emotion-category resonance. This prioritises the word whose *meaning* actually matches over one that merely shares a common noun. Measured accuracy: **90 % category-match** across 50 independent test inputs (`server/scripts/benchmark.js`). If `ANTHROPIC_API_KEY` is set on the server, it upgrades to Claude with the same JSON contract; the UI honestly discloses which engine answered.
+The offline engine is a small retrieval model: **field-weighted BM25 over each word's definition**, with a hand-built **concept thesaurus** that maps what people actually type ("outsider", "comeback", "fed up") onto the vocabulary the definitions use, plus light stemming and an emotion-category read of the input. Word-level accuracy on 100 plain-language descriptions: **95 % / 88 %** best-match-correct on the tuning / held-out sets (`server/scripts/engine-check.js`, runs offline); the category-proxy benchmark is in `server/scripts/benchmark.js`. The Atlas search uses the same engine when you type a description instead of a word. If `ANTHROPIC_API_KEY` is set on the server, it upgrades to Claude with the same JSON contract; the UI honestly discloses which engine answered.
 
 ### Accounts, submissions & admin
 - **Accounts** — JWT + bcrypt auth (name + email + password), editable, deletable (cascades). Saved words, saved image cards, and search history persist server-side.
@@ -55,7 +55,7 @@ Fully responsive (verified at 375 px mobile and desktop), keyboard-navigable, `p
 ## Tech stack
 - **Frontend:** **React 18 + Vite + React Router** (hash routing), HTML Canvas (image cards), SVG (force-directed map + charts), Web Speech API (pronunciation), Web Share API.
 - **Backend:** Node.js + Express (Vercel serverless function), Prisma ORM, PostgreSQL / Neon (SQLite-capable), JWT + bcrypt.
-- **AI:** offline TF-IDF cosine matcher; optional Claude (`claude-opus-4-8`) via `ANTHROPIC_API_KEY`.
+- **AI:** offline BM25 + concept-thesaurus matcher; optional Claude (`claude-opus-4-8`) via `ANTHROPIC_API_KEY`.
 
 ## Project structure
 ```
@@ -76,7 +76,7 @@ Project Babel/
 │  ├─ src/index.js           #   API routes + screening + word-add-on-accept
 │  ├─ src/ai.js              #   offline matching engine (API side)
 │  ├─ prisma/schema.prisma   #   data model (PostgreSQL)
-│  ├─ scripts/               #   benchmark.js, clear-feeling-cache.js
+│  ├─ scripts/               #   benchmark.js, engine-check.js, clear-feeling-cache.js
 │  └─ results/metrics.json   #   measured accuracy (read by the site)
 ├─ site/                     # original vanilla-JS frontend (reference only)
 ├─ vercel.json               # builds web/dist, routes /api/* → the function
@@ -84,14 +84,14 @@ Project Babel/
 └─ README.md                 # this file
 ```
 
-> **Note on the matching engine:** the offline engine exists in **three** places kept in sync by hand — `server/src/ai.js` (the API), `web/src/lib/engine.js` (the React fallback), and `site/app.js` (the legacy vanilla version). Change them together, then clear the feeling cache and re-run the benchmark.
+> **Note on the matching engine:** the offline engine exists in **two** deployed places kept in sync by hand — `server/src/ai.js` (the API) and `web/src/lib/engine.js` (the React fallback). The block between the `ENGINE CORE` markers is identical in both: change one, paste it into the other, bump `AI_CACHE_VERSION`, then run `node scripts/engine-check.js` and re-run the benchmark. (`site/app.js`, the legacy vanilla version, keeps the earlier TF-IDF engine.)
 
 ## Documentation
 
 Deeper write-ups of how the interesting parts work live in [`docs/`](docs/):
 
 - **[Architecture](docs/architecture.md)** — the whole system end to end: the React frontend, the serverless Express API, the Neon database, data flow, the offline/fallback design, and deployment.
-- **[Matching engine](docs/matching-engine.md)** — how "Name My Feeling" and the Composer turn a described feeling into a word: the offline TF-IDF cosine engine, the scoring formula, and the optional Claude upgrade.
+- **[Matching engine](docs/matching-engine.md)** — how "Name My Feeling" and the Composer turn a described feeling into a word: the offline BM25 + concept-thesaurus engine, the scoring formula, and the optional Claude upgrade.
 - **[Cognitive distance](docs/cognitive-distance.md)** — how each word's "untranslatability" score is calculated: the curatorial base score and the four-component algorithmic composite.
 - **[Submission screening](docs/submission-screening.md)** — the automated rules a community-submitted word passes through (duplicates, placeholders, gibberish, coherence) before it reaches human review.
 

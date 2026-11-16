@@ -6,6 +6,7 @@ import { Store } from "../lib/store.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useModal } from "../context/ModalContext.jsx";
 import { toast } from "../lib/ui.js";
+import { useOverlay } from "../lib/useOverlay.js";
 import WordCard from "../components/WordCard.jsx";
 import AuthModal from "../components/AuthModal.jsx";
 import Footer from "../components/Footer.jsx";
@@ -125,6 +126,7 @@ function EditModal({ user, onClose, onSaved }) {
   const [name, setName] = useState(user.name || "");
   const [pass, setPass] = useState("");
   const [busy, setBusy] = useState(false);
+  useOverlay(onClose);
   async function save() {
     setBusy(true);
     const r = await API.updateAccount(name.trim(), pass);
@@ -148,6 +150,7 @@ function EditModal({ user, onClose, onSaved }) {
 }
 
 function ConfirmDelete({ onClose, onConfirm }) {
+  useOverlay(onClose);
   return (
     <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal">

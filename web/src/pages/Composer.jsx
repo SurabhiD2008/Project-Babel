@@ -12,11 +12,15 @@ export default function Composer() {
   const [text, setText] = useState("");
   const [found, setFound] = useState([]);
   const [tab, setTab] = useState("write");
+  const [busy, setBusy] = useState(false);
   const words = (text.trim().match(/\S+/g) || []).length;
 
   async function analyse() {
     if (!text.trim()) { toast("Write something first"); return; }
-    const f = await composeAnalyse(text);
+    if (busy) return;
+    setBusy(true);
+    let f;
+    try { f = await composeAnalyse(text); } finally { setBusy(false); }
     setFound(f);
     setTab("annotated");
     toast(`${f.length} untranslatable moments found`);
@@ -33,10 +37,11 @@ export default function Composer() {
 
   function annotatedHTML() {
     let html = text ? escHtml(text) : "<span style='color:var(--text-faint)'>Nothing written yet.</span>";
-    found.forEach((f) => {
+    found.forEach((f, i) => {
       const safe = escHtml(f.phrase);
       const tip = escHtml(`${f.lang}: ${f.word} — ${f.def}`);
-      html = html.replace(safe, `<span class="mark" data-slug="${f.slug}" title="${tip}">${safe}</span>`);
+      // Underlines arrive one after another (spec §5: 50ms stagger per annotation).
+      html = html.replace(safe, () => `<span class="mark" style="animation-delay:${i * 50 + 200}ms" data-slug="${f.slug}" title="${tip}">${safe}</span>`);
     });
     return html;
   }
@@ -59,7 +64,6 @@ export default function Composer() {
               <div className="compose-editor" id="composeEditor">
                 {tab === "write" ? (
                   <>
-                    <div className="ghost-word" style={{ right: 0, bottom: "-10%" }}>λέξις</div>
                     <textarea
                       value={text}
                       onChange={(e) => setText(e.target.value)}
@@ -76,7 +80,7 @@ export default function Composer() {
               </div>
               <div className="compose-footer">
                 <span className="stat-line">{words} words · {found.length} untranslatable moments found</span>
-                <button className="btn btn-amber" onClick={analyse}>Analyse my text →</button>
+                <button className="btn btn-amber" disabled={busy} onClick={analyse}>Analyse my text →</button>
               </div>
             </div>
             <aside>
@@ -84,7 +88,7 @@ export default function Composer() {
               <div id="palette">
                 {found.length ? (
                   found.map((f, i) => (
-                    <div key={i} className="palette-card">
+                    <div key={f.slug} className="palette-card page-fade" style={{ animationDelay: i * 60 + "ms" }}>
                       <span className="wc-meta">{f.lang}</span>
                       <div className="wc-word" style={{ fontSize: "1.3rem" }}>{f.word}</div>
                       <div className="wc-def" style={{ minHeight: "auto" }}>{f.def}</div>

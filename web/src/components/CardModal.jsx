@@ -3,16 +3,18 @@ import { Link } from "react-router-dom";
 import { WORDS_BY_SLUG } from "../data/index.js";
 import { cardDataURL } from "../lib/card.js";
 import { useModal } from "../context/ModalContext.jsx";
+import { useOverlay } from "../lib/useOverlay.js";
 
 export default function CardModal({ slug, source, onClose }) {
   const w = WORDS_BY_SLUG[slug];
   const { shareCardTo, download } = useModal();
+  useOverlay(onClose);
   const url = useMemo(() => (w ? cardDataURL(w) : ""), [slug]); // eslint-disable-line
   if (!w) return null;
   return (
     <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal">
-        <button className="close" onClick={onClose}>×</button>
+        <button className="close" aria-label="Close" onClick={onClose}>×</button>
         <span className="eyebrow">Image card</span>
         <h3 style={{ margin: "8px 0 10px" }}>
           {w.word} <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--amber-dim)" }}>{w.language.toUpperCase()}</span>

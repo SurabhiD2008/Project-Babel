@@ -35,7 +35,6 @@ export default function Home() {
     <div className="page-fade">
       <section className="hero">
         <div className="wrap-wide">
-          <div className="ghost-word" style={{ right: "-4%", bottom: "-6%" }}>{featured.native || featured.word}</div>
           <div className="hero-grid">
             <div>
               <span className="eyebrow">An atlas of untranslatable words</span>
@@ -107,7 +106,7 @@ export default function Home() {
             </div>
           </div>
           <div className="word-grid" style={{ marginTop: 22 }}>
-            {mini.map((w) => <WordCard key={w.slug} w={w} />)}
+            {mini.map((w, i) => <WordCard key={w.slug} w={w} i={i} />)}
           </div>
         </div>
       </section>

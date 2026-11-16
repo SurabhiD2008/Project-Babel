@@ -3,13 +3,21 @@ import { VISIBLE_WORDS, CATEGORIES, categoryCounts } from "../data/index.js";
 
 /* ---------- backend client (real API first, localStorage fallback) ---------- */
 let apiBasePromise = null;
+let apiBaseFailedAt = 0;
+const LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
 export function resolveApiBase() {
-  if (apiBasePromise) return apiBasePromise;
+  // A failed probe is remembered only briefly: a serverless cold start (or a
+  // dropped connection) shouldn't leave the whole session in offline mode.
+  if (apiBasePromise && !(apiBaseFailedAt && Date.now() - apiBaseFailedAt > 20000)) return apiBasePromise;
+  apiBaseFailedAt = 0;
   apiBasePromise = (async () => {
-    for (const base of ["/api", "http://localhost:4600/api"]) {
+    // Same-origin API first (generous timeout — the first hit may be waking the
+    // function). The local dev server is only worth trying when running locally.
+    const candidates = LOCAL ? [["/api", 900], ["http://localhost:4600/api", 900]] : [["/api", 4500]];
+    for (const [base, wait] of candidates) {
       try {
         const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 900);
+        const t = setTimeout(() => ctrl.abort(), wait);
         const res = await fetch(base + "/health", { signal: ctrl.signal });
         clearTimeout(t);
         if (res.ok) return base;
@@ -17,6 +25,7 @@ export function resolveApiBase() {
         /* try next */
       }
     }
+    apiBaseFailedAt = Date.now();
     return null;
   })();
   return apiBasePromise;

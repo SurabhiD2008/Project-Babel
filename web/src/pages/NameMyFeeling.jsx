@@ -5,6 +5,7 @@ import { feelingSearch } from "../lib/feeling.js";
 import { useModal } from "../context/ModalContext.jsx";
 import { toast } from "../lib/ui.js";
 import DistBar from "../components/DistBar.jsx";
+import { setGhostWord } from "../components/GhostWord.jsx";
 
 const EXAMPLES = [
   "The ache of missing a place I've never actually been to",
@@ -26,19 +27,26 @@ export default function NameMyFeeling() {
   const [loadingLang, setLoadingLang] = useState(null); // null = not loading
   const cyc = useRef(null);
   const resultRef = useRef(null);
+  const inputRef = useRef(null);
+  const run = useRef(0);
 
   async function search(input) {
     const t = (input ?? text).trim();
-    if (t.length < 4) { toast("Describe the feeling a little more"); return; }
+    if (t.length < 4) { toast("Describe the feeling a little more"); inputRef.current?.focus(); return; }
+    const id = ++run.current; // a newer search supersedes an older one still in flight
     let i = 0;
     setResult(null);
     setLoadingLang(LANGUAGES[0]);
     clearInterval(cyc.current);
     cyc.current = setInterval(() => { i = (i + 1) % LANGUAGES.length; setLoadingLang(LANGUAGES[i]); }, 420);
-    const r = await feelingSearch(t);
+    if (window.innerWidth < 1024) setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
+    // Hold the "searching" beat long enough to read, however fast the answer is.
+    const [r] = await Promise.all([feelingSearch(t), new Promise((res) => setTimeout(res, 650))]);
+    if (id !== run.current) return;
     clearInterval(cyc.current);
     setLoadingLang(null);
     setResult(r);
+    if (r?.bestMatch) setGhostWord(r.bestMatch.native || r.bestMatch.word);
     if (window.innerWidth < 1024) setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
   }
 
@@ -46,7 +54,7 @@ export default function NameMyFeeling() {
   useEffect(() => {
     const q = params.get("q");
     if (q && q.trim().length >= 4) search(q);
-    return () => clearInterval(cyc.current);
+    return () => { run.current++; clearInterval(cyc.current); };
     // eslint-disable-next-line
   }, []);
 
@@ -65,22 +73,25 @@ export default function NameMyFeeling() {
                 Honest disclosure: matching runs on Babel's own scoring engine by default. It's a best estimate from {WORDS.length} curated entries, not verified linguistic fact. Measured accuracy is on the <Link to="/about" style={{ color: "var(--amber-dim)" }}>About page</Link>.
               </p>
               <textarea
+                ref={inputRef}
                 maxLength={300}
                 value={text}
+                aria-label="Describe what you're feeling"
                 onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); search(); } }}
                 placeholder="It's a kind of longing, but sweet — like I'm homesick for something that never happened…"
               />
               <div className="char-count"><span>{text.length}</span>/300</div>
               <div className="chips">
                 {EXAMPLES.map((e) => (
-                  <span key={e} className="chip" onClick={() => setText(e)}>{e}</span>
+                  <span key={e} className="chip" role="button" tabIndex={0} onClick={() => { setText(e); inputRef.current?.focus(); }} onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setText(e); inputRef.current?.focus(); } }}>{e}</span>
                 ))}
               </div>
-              <button className="btn btn-amber btn-full" onClick={() => search()}>Search all languages →</button>
+              <button className="btn btn-amber btn-full" disabled={!!loadingLang} onClick={() => search()}>Search all languages →</button>
               <div className="lang-hint">Searching {LANGUAGES.slice(0, 4).join(" · ")}…</div>
             </div>
 
-            <div className="nmf-result" id="nmfResult" ref={resultRef}>
+            <div className="nmf-result" id="nmfResult" ref={resultRef} aria-live="polite">
               {loadingLang ? (
                 <div style={{ minHeight: 250, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <div className="loading-word">Searching {loadingLang}…</div>
@@ -101,7 +112,7 @@ export default function NameMyFeeling() {
                   </div>
                   <div className="label label-line">Cross-language alternatives</div>
                   {result.alternates.map((a) => (
-                    <div key={a.slug} className="compare-row alt-row" title={`Open ${a.word}'s image card`} onClick={() => openCard(a.slug, "feeling")}>
+                    <div key={a.slug} className="compare-row alt-row" role="button" tabIndex={0} title={`Open ${a.word}'s image card`} onClick={() => openCard(a.slug, "feeling")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCard(a.slug, "feeling"); } }}>
                       <span className="cl">{a.lang}<b>{a.word}</b></span>
                       <DistBar pct={a.match} />
                       <span className="cn">{a.match}%</span>

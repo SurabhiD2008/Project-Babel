@@ -28,9 +28,14 @@ async function loadWordCache() {
       slug: true, word: true, language: true, native: true, phonetic: true,
       family: true, script: true, category: true, distScore: true,
       intensity: true, defShort: true, defFull: true,
+      // The matcher also reads two of the portrait notes as supporting text.
+      dimensions: { select: { label: true, content: true } },
     },
   });
-  WORD_CACHE = rows.map((r) => ({ ...r, dist: r.distScore }));
+  WORD_CACHE = rows.map(({ dimensions, ...r }) => {
+    const note = (label) => (dimensions || []).find((d) => d.label === label)?.content || "";
+    return { ...r, dist: r.distScore, dims: { english: note("Nearest in English"), cognitive: note("Cognitive Science") } };
+  });
   console.log(`Loaded ${WORD_CACHE.length} words into the AI cache.`);
 }
 
@@ -317,7 +322,7 @@ async function log(kind, data = {}) {
 
 /* Bump when the matching engine changes so previously-cached AiCache responses
    are bypassed automatically on deploy (old rows become unreachable keys). */
-const AI_CACHE_VERSION = "v2-neverbeen";
+const AI_CACHE_VERSION = "v3-bm25-concepts";
 
 const api = express.Router();
 

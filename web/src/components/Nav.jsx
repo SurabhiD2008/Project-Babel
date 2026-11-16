@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { NAV } from "../lib/util.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -13,12 +13,21 @@ export default function Nav() {
   const { wordCount } = useWords();
   const onAdmin = loc.pathname.startsWith("/admin");
 
+  // The mobile drawer never outlives the page it was opened on, and Escape shuts it.
+  useEffect(() => { setOpen(false); }, [loc.pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <>
       <nav className="topnav">
         <div className="inner">
           <Link to="/" className="logo" onClick={() => setOpen(false)}>Babel</Link>
-          <button className="nav-toggle" onClick={() => setOpen((o) => !o)}>Menu</button>
+          <button className="nav-toggle" aria-expanded={open} aria-controls="navlinks" onClick={() => setOpen((o) => !o)}>Menu</button>
           <div className={"navlinks" + (open ? " open" : "")} id="navlinks">
             {NAV.map(([h, t]) => (
               <NavLink key={h} to={h} className={({ isActive }) => (isActive ? "active" : "")} onClick={() => setOpen(false)}>
