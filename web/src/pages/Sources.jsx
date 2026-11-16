@@ -53,7 +53,7 @@ export default function Sources() {
               </>
             ) : (
               <p style={{ fontSize: 12, color: "var(--text-faint)" }}>
-                Live benchmark server unreachable — last known measured result: 50 inputs, 90% category match rate, ~53ms average response. Re-run <code>node scripts/benchmark.js</code> in <code>server/</code> for fresh numbers.
+                Live benchmark server unreachable — last known measured result: 50 inputs, 88% category match rate, ~303ms average response. Re-run <code>node scripts/benchmark.js</code> in <code>server/</code> for fresh numbers.
               </p>
             )}
           </div>

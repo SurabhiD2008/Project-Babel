@@ -83,8 +83,8 @@ Runs 50 independently-written feeling descriptions (7 per emotion category, none
 copied from any word's own definition) against the live `/api/feelings/search`
 endpoint, measures category-match rate and response latency, and writes
 `results/metrics.json` — which `/api/metrics/benchmark` and the site's About/
-Sources pages read from. Latest measured result: **90 % category-match rate,
-~53 ms average response**. Re-run after changing the matching engine or lexicon
+Sources pages read from. Latest measured result: **88 % category-match rate,
+~303 ms average response** (measured against the live deployment, network round trip included). Re-run after changing the matching engine or lexicon
 in `src/ai.js` (and clear cached rows first with `node scripts/clear-feeling-cache.js`).
 
 ## Switching to PostgreSQL (production)

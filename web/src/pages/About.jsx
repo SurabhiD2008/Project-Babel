@@ -17,7 +17,7 @@ export default function About() {
 
   useEffect(() => {
     let done = false;
-    const FALLBACK = { sampleSize: 50, categoryMatchRate: 90, avgResponseMs: 53, live: false };
+    const FALLBACK = { sampleSize: 50, categoryMatchRate: 88, avgResponseMs: 303, live: false };
     apiFetch("/metrics/benchmark").then((m) => { if (!done) setMetrics({ ...m, live: true }); }).catch(() => { if (!done) setMetrics(FALLBACK); });
     return () => { done = true; };
   }, []);
