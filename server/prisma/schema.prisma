@@ -81,6 +81,8 @@ model User {
   email        String         @unique
   name         String         @default("")
   passwordHash String
+  // Bumped when the password changes; sessions signed with an older value stop working.
+  sessionVersion Int          @default(0)
   createdAt    DateTime       @default(now())
   saved        SavedWord[]
   savedCards   SavedCard[]
@@ -135,6 +137,8 @@ model Submission {
   status      String   @default("pending") // pending | rejected_duplicate | rejected_invalid | accepted
   statusNote  String   @default("")
   submittedAt DateTime @default(now())
+
+  @@index([status])
 }
 
 // AI response cache (Redis substitute — spec §6). Keyed by SHA-256 of input.
@@ -154,4 +158,14 @@ model SearchLog {
   category  String   @default("")
   bestSlug  String   @default("")
   createdAt DateTime @default(now())
+}
+
+// Fixed-window request counters. Keys are HMACs, so no raw IP address or email
+// is stored; rows expire with their window and are cleaned up periodically.
+model RateLimit {
+  key       String   @id
+  count     Int
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }

@@ -77,15 +77,29 @@ async function run() {
   const timings = [];
   const rows = [];
 
+  // The API rate-limits searches per address. When the limit is reached the
+  // run waits out the window instead of counting a refusal as a wrong answer.
+  async function search(text) {
+    for (;;) {
+      const t0 = Date.now();
+      const res = await fetch(`${BASE}/feelings/search`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-babel-client": "1" },
+        body: JSON.stringify({ input: text }),
+      });
+      if (res.status === 429) {
+        const wait = Number(res.headers.get("retry-after") || 60);
+        console.info(`Rate limited; waiting ${wait} s`);
+        await new Promise((r) => setTimeout(r, wait * 1000));
+        continue;
+      }
+      if (!res.ok) throw new Error(`Search failed with HTTP ${res.status}`);
+      return { data: await res.json(), ms: Date.now() - t0 };
+    }
+  }
+
   for (const c of CASES) {
-    const t0 = Date.now();
-    const res = await fetch(`${BASE}/feelings/search`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ input: c.text }),
-    });
-    const data = await res.json();
-    const ms = Date.now() - t0;
+    const { data, ms } = await search(c.text);
     timings.push(ms);
     const matched = data.bestMatch?.category === c.cat;
     if (matched) hits++;

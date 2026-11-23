@@ -32,7 +32,7 @@ export default function AuthModal({ onClose }) {
         <h3 style={{ margin: "8px 0 4px" }}>{isReg ? "Create your Babel account" : "Sign in to Babel"}</h3>
         <p style={{ fontSize: 12, marginBottom: 16 }}>
           Save words, keep your Name My Feeling history, and revisit saved image cards.
-          {isReg ? " Password of 4+ characters." : ""}
+          {isReg ? " Password of 8+ characters." : ""}
         </p>
         {isReg && (
           <div className="form-field"><label>Name</label>

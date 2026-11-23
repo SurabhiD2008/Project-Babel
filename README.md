@@ -11,7 +11,7 @@
 It is one project in two parts:
 
 - **Frontend** (`web/`) — a **React 18** single-page app built with **Vite** and **React Router**, fully responsive across mobile and desktop, with shareable/downloadable image cards and per-user saved-word bookmarking. `web/src/data/data.js` is the bundled source of word data.
-- **Backend** (`server/`) — Node.js + Express + Prisma, deployed as a **Vercel serverless function**. The live source of truth for accounts, saved data, submissions, analytics, and the word database. Uses **PostgreSQL (Neon)** in production and local dev; SQLite is still supported for a zero-setup local run of the API.
+- **Backend** (`server/`) — Node.js + Express + Prisma, deployed as a **Vercel serverless function**. The live source of truth for accounts, saved data, submissions, analytics, and the word database. Uses **PostgreSQL (Neon)** in production and local development.
 
 The frontend calls the real backend first and falls back to `localStorage` and an in-browser engine when the API is unreachable, so it works either way. See the **[Architecture doc](docs/architecture.md)** for how it all fits together.
 
@@ -40,7 +40,7 @@ Every word portrait, Name My Feeling result, and saved card can be **downloaded*
 The offline engine is a small retrieval model: **field-weighted BM25 over each word's definition**, with a hand-built **concept thesaurus** that maps what people actually type ("outsider", "comeback", "fed up") onto the vocabulary the definitions use, plus light stemming and an emotion-category read of the input. Word-level accuracy on 100 plain-language descriptions: **95 % / 88 %** best-match-correct on the tuning / held-out sets (`server/scripts/engine-check.js`, runs offline); the category-proxy benchmark is in `server/scripts/benchmark.js`. The Atlas search uses the same engine when you type a description instead of a word. If `ANTHROPIC_API_KEY` is set on the server, it upgrades to Claude with the same JSON contract; the UI honestly discloses which engine answered.
 
 ### Accounts, submissions & admin
-- **Accounts** — JWT + bcrypt auth (name + email + password), editable, deletable (cascades). Saved words, saved image cards, and search history persist server-side.
+- **Accounts** — name + email + password (bcrypt, cost 12) with a signed session in an HttpOnly cookie; editable, deletable (cascades). Saved words, saved image cards, and search history persist server-side.
 - **Community submissions** — screened automatically for duplicates, placeholders, **accuracy/plausibility** (gibberish words and incoherent explanations are rejected; unknown languages flagged), and vagueness, then queued for human review.
 - **Admin** (`#/admin`, gated by `ADMIN_KEY`) — usage metrics with charts (users, saved words, **shared cards**, searches, top categories/words), and a moderation queue. **Accepting a submission adds it to the database as a real word**, and there's a word-delete endpoint — so the **word count and browse surfaces update automatically** with the database.
 
@@ -52,9 +52,47 @@ Fully responsive (verified at 375 px mobile and desktop), keyboard-navigable, `p
 
 ---
 
+## Security
+
+- **Sessions** live in an HttpOnly, SameSite=Strict cookie (Secure in production) that page scripts cannot read. Sessions last 7 days; changing the password ends every other session, and a deleted account's session stops working at once.
+- **Request forgery:** every write must carry an `x-babel-client` header, which a cross-site page cannot add. The API sends no CORS headers at all; the frontend and API share one origin.
+- **Input:** every request body, query and path parameter is checked with a zod schema; unknown fields are refused. JSON bodies are capped at 100 KB.
+- **Rendering:** no user, community or model text is ever inserted as HTML. The engine escapes what it interpolates, and the page renders only its own bold and line-break formatting.
+- **Rate limits** (stored in the database, so they hold across serverless instances): sign-in 5 failures per 15 min per account and address; admin key 5 failures per 15 min per address; registration 5 per hour; submissions 6 per 10 min plus 200 a day overall; searches 30 per 10 min plus 5,000 a day overall; events 60 per 10 min; Claude calls 6 per 10 min per visitor plus `CLAUDE_DAILY_CAP` a day overall, after which the offline engine answers.
+- **Admin** uses `ADMIN_KEY`, sent only as the `x-admin-key` header and held in memory by the admin page (never in browser storage).
+- **Headers:** a content security policy, `nosniff`, frame denial and a referrer policy on every page (`vercel.json`) and API response.
+- **Startup:** the server refuses to start without `DATABASE_URL` and a `JWT_SECRET` of at least 32 characters, or with an `ADMIN_KEY` shorter than 32 characters.
+
+### Environment variables (`server/.env`, or Vercel project settings)
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `DATABASE_URL` | yes | Pooled Postgres connection used by the app |
+| `DATABASE_URL_UNPOOLED` | for schema changes | Direct connection used by `prisma db push` |
+| `JWT_SECRET` | yes | Signs session cookies; at least 32 characters |
+| `ADMIN_KEY` | no | Unlocks the admin routes; at least 32 characters; unset keeps them closed |
+| `PORT` | no | Local server port (default 4600) |
+| `ANTHROPIC_API_KEY` | no | Enables the Claude path for Name My Feeling and screening |
+| `ANTHROPIC_MODEL` | no | Claude model override |
+| `CLAUDE_DAILY_CAP` | no | Claude calls per day across all visitors (default 300) |
+
+### Applying a schema change
+
+The `RateLimit` table and the `User.sessionVersion` column must exist before the new code is deployed. From `server/`, with `DATABASE_URL` and `DATABASE_URL_UNPOOLED` pointing at the production database:
+
+```
+npx prisma db push
+```
+
+The change only adds a table, a column with a default and an index, so it does not touch existing data.
+
+### Tests
+
+`cd server && npm test` runs the API security suite (configuration, headers, request forgery, validation, sessions, lockouts, rate limits, moderation rules and the Claude path) against an in-memory store. It needs no database, network or keys.
+
 ## Tech stack
 - **Frontend:** **React 18 + Vite + React Router** (hash routing), HTML Canvas (image cards), SVG (force-directed map + charts), Web Speech API (pronunciation), Web Share API.
-- **Backend:** Node.js + Express (Vercel serverless function), Prisma ORM, PostgreSQL / Neon (SQLite-capable), JWT + bcrypt.
+- **Backend:** Node.js 22 + Express (Vercel serverless function), Prisma ORM, PostgreSQL / Neon, zod validation, cookie sessions + bcrypt.
 - **AI:** offline BM25 + concept-thesaurus matcher; optional Claude (`claude-opus-4-8`) via `ANTHROPIC_API_KEY`.
 
 ## Project structure

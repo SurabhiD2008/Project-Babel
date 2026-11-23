@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WORDS_BY_SLUG } from "../data/index.js";
 import { API } from "../lib/api.js";
-import { Store } from "../lib/store.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useModal } from "../context/ModalContext.jsx";
 import { toast } from "../lib/ui.js";
@@ -46,7 +45,7 @@ export default function Account() {
   }
 
   const displayName = user.name && user.name.trim() ? user.name : user.email.split("@")[0];
-  const online = !!Store.get("token", null);
+  const online = !!user.server;
 
   async function removeCard(slug) {
     await API.unsaveCard(slug);
@@ -125,11 +124,12 @@ export default function Account() {
 function EditModal({ user, onClose, onSaved }) {
   const [name, setName] = useState(user.name || "");
   const [pass, setPass] = useState("");
+  const [current, setCurrent] = useState("");
   const [busy, setBusy] = useState(false);
   useOverlay(onClose);
   async function save() {
     setBusy(true);
-    const r = await API.updateAccount(name.trim(), pass);
+    const r = await API.updateAccount(name.trim(), pass, current);
     setBusy(false);
     onSaved();
     if (r.ok) { toast("Account updated"); onClose(); } else toast(r.error || "Update failed");
@@ -141,8 +141,9 @@ function EditModal({ user, onClose, onSaved }) {
         <span className="eyebrow">Your profile</span>
         <h3 style={{ margin: "8px 0 4px" }}>Edit account</h3>
         <p style={{ fontSize: 12, marginBottom: 16 }}>Update your name, or set a new password. Leave the password blank to keep it unchanged.</p>
-        <div className="form-field"><label>Name</label><input value={name} onChange={(e) => setName(e.target.value)} type="text" placeholder="Your name" /></div>
-        <div className="form-field"><label>New password (optional)</label><input value={pass} onChange={(e) => setPass(e.target.value)} type="password" placeholder="••••••••" autoComplete="new-password" /></div>
+        <div className="form-field"><label htmlFor="acc-name">Name</label><input id="acc-name" value={name} onChange={(e) => setName(e.target.value)} type="text" placeholder="Your name" /></div>
+        <div className="form-field"><label htmlFor="acc-new-pass">New password (optional, 8+ characters)</label><input id="acc-new-pass" value={pass} onChange={(e) => setPass(e.target.value)} type="password" placeholder="••••••••" autoComplete="new-password" /></div>
+        {pass && <div className="form-field"><label htmlFor="acc-current-pass">Current password</label><input id="acc-current-pass" value={current} onChange={(e) => setCurrent(e.target.value)} type="password" placeholder="••••••••" autoComplete="current-password" /></div>}
         <button className="btn btn-amber btn-full" disabled={busy} onClick={save}>{busy ? "Saving…" : "Save changes"}</button>
       </div>
     </div>

@@ -17,9 +17,6 @@ export const NAV = [
   ["/about", "About"],
 ];
 
-export const escHtml = (s) =>
-  String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-
 export function dimLabel(k) {
   return {
     cognitive: "Cognitive Science",

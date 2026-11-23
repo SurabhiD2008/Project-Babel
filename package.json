@@ -4,6 +4,9 @@
   "private": true,
   "description": "Babel — an interactive atlas of untranslatable words (full-stack: static frontend + serverless API).",
   "scripts": {
-    "vercel-build": "cd server && npm install && npx prisma generate"
+    "vercel-build": "cd server && npm ci && npx prisma generate"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

@@ -19,7 +19,7 @@ Ships with **SQLite** so it runs with zero external database setup; switching to
 cd "Project Babel/server"
 npm install
 npm run setup     # prisma generate + db push + seed 500 words
-npm start         # http://localhost:4600  (API under /api, site at /)
+npm start         # http://localhost:4600  (API under /api; the React build at / once web/ is built)
 ```
 `npm run setup` is idempotent — re-running re-seeds the words from `../site/data.js`,
 the single source of truth shared with the frontend.
@@ -35,10 +35,11 @@ the single source of truth shared with the frontend.
 | POST | `/api/feelings/search` | `{input}` → `{bestMatch, matchScore, explanation, sapirWhorf, alternates[]}` (cached) |
 | POST | `/api/compose/analyse` | `{text}` → `{found:[{phrase,word,lang,def,why}]}` (cached) |
 | POST | `/api/submissions` | community word submission → review queue |
-| POST | `/api/auth/register` | `{name,email,password}` → `{token,user}` (name required) |
-| POST | `/api/auth/login` | `{email,password}` → `{token,user}` |
+| POST | `/api/auth/register` | `{name,email,password}` → `{user}` and a session cookie (password 8 to 72 bytes) |
+| POST | `/api/auth/login` | `{email,password}` → `{user}` and a session cookie; 5 failures per 15 min per account and address lock sign-in |
+| POST | `/api/auth/logout` | clears the session cookie |
 | GET | `/api/user/me` | auth — current account `{email,name,createdAt}` |
-| PATCH | `/api/user/me` | auth — edit account `{name?,password?}` |
+| PATCH | `/api/user/me` | auth — edit account `{name?, password?, currentPassword?}`; a new password needs the current one and ends other sessions |
 | DELETE | `/api/user/me` | auth — delete account (cascades saved words/cards/history) |
 | GET | `/api/user/saved` | auth — the user's saved collection |
 | POST | `/api/user/saved/:slug` | auth — save a word |
@@ -47,14 +48,14 @@ the single source of truth shared with the frontend.
 | GET | `/api/user/cards` | auth — the user's saved shareable image cards |
 | POST | `/api/user/cards/:slug` | auth — save a card (body `{source}`: portrait\|feeling\|compose) |
 | DELETE | `/api/user/cards/:slug` | auth — remove a saved card |
-| GET | `/api/analytics` | public summary metrics (spec §12) |
+| GET | `/api/analytics` | admin only — summary metrics |
 | GET | `/api/metrics/benchmark` | real, measured Name My Feeling accuracy/latency (see Benchmark below) |
-| POST | `/api/events` | log a share/copy/download event |
-| GET | `/api/health` | liveness + word count + active AI engine |
+| POST | `/api/events` | log a client event (`share`, `share_card`, `ask_babel`) |
+| GET | `/api/health` | `{status:"ok"}` only |
 
-Auth: send `Authorization: Bearer <token>` for the `/api/user/*` routes.
+Auth: the session is an HttpOnly, Secure (in production), SameSite=Strict cookie scoped to `/api`, valid for 7 days. Every write (POST, PATCH, DELETE) must carry the header `x-babel-client: 1`; browsers cannot add it to cross-site requests, which blocks request forgery. Write bodies are validated with zod and unknown fields are refused. Rate limits are stored in the database (`RateLimit` table) so they hold across serverless instances.
 
-### Admin (gated by `ADMIN_KEY` in `.env`, sent as an `x-admin-key` header)
+### Admin (gated by `ADMIN_KEY` in `.env`, sent only as an `x-admin-key` header; 5 wrong keys per 15 min per address lock it)
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/api/admin/metrics` | full usage dashboard: users, saved words/cards, **shared cards**, searches, event counts, most-searched categories, most-viewed words, submissions by status |
@@ -72,7 +73,7 @@ live atlas and the pending queue; rejects placeholder/malformed entries; runs an
 **accuracy/plausibility pass** (keyboard-mash / vowel-less "words" and incoherent
 explanations are rejected as `rejected_inaccurate`, an unrecognised language name
 is flagged for review); and rejects or flags vague explanations. See
-`screenSubmission()` in `src/index.js`. Accepting an entry then adds it to the
+`screenSubmission()` in `src/screening.js`. Accepting an entry then adds it to the
 database, so the site's word count and browse surfaces update automatically.
 
 ### Benchmark (spec §12 — real numbers, not fabricated)

@@ -5,6 +5,7 @@ import { feelingSearch } from "../lib/feeling.js";
 import { useModal } from "../context/ModalContext.jsx";
 import { toast } from "../lib/ui.js";
 import DistBar from "../components/DistBar.jsx";
+import RichText from "../components/RichText.jsx";
 import { setGhostWord } from "../components/GhostWord.jsx";
 
 const EXAMPLES = [
@@ -119,8 +120,8 @@ export default function NameMyFeeling() {
                       <span className="alt-hint">card ↗</span>
                     </div>
                   ))}
-                  <div className="sw-box"><span className="label">Sapir-Whorf provocation</span><p dangerouslySetInnerHTML={{ __html: result.sapirWhorf }} /></div>
-                  <div className="ai-response" dangerouslySetInnerHTML={{ __html: result.explanation }} />
+                  <div className="sw-box"><span className="label">Sapir-Whorf provocation</span><RichText as="p" html={result.sapirWhorf} /></div>
+                  <RichText className="ai-response" html={result.explanation} />
                   <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
                     <Link className="btn btn-amber" to={`/word/${result.bestMatch.slug}`}>Read the full portrait →</Link>
                     <button className="btn btn-ghost" onClick={() => download(result.bestMatch.slug, "feeling")}>Download Image Card ⬇</button>

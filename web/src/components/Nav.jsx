@@ -4,6 +4,7 @@ import { NAV } from "../lib/util.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useWords } from "../context/WordsContext.jsx";
 import AuthModal from "./AuthModal.jsx";
+import { clearAdminKey } from "../lib/adminKey.js";
 
 export default function Nav() {
   const [open, setOpen] = useState(false);
@@ -38,7 +39,7 @@ export default function Nav() {
           <div className="nav-pulse"><span className="pulse-dot"></span>{wordCount} words indexed</div>
           <div className="nav-account">
             {onAdmin ? (
-              <button className="btn btn-amber" onClick={() => { sessionStorage.removeItem("babel:adminKey"); window.location.reload(); }}>Sign Out</button>
+              <button className="btn btn-amber" onClick={() => { clearAdminKey(); window.location.reload(); }}>Sign Out</button>
             ) : user ? (
               <>
                 <Link className="btn btn-amber" to="/account">Your Profile</Link>

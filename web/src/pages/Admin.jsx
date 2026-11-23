@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { CATEGORIES, CAT_COLOR, WORDS_BY_SLUG } from "../data/index.js";
 import { apiFetch } from "../lib/api.js";
+import { getAdminKey, setAdminKey, clearAdminKey } from "../lib/adminKey.js";
 import { toast } from "../lib/ui.js";
 import DistBar from "../components/DistBar.jsx";
 import Footer from "../components/Footer.jsx";
 
 async function adminFetch(path, opts = {}) {
-  const key = sessionStorage.getItem("babel:adminKey");
-  return apiFetch(path, { ...opts, headers: { "x-admin-key": key || "", ...(opts.headers || {}) } });
+  return apiFetch(path, { ...opts, headers: { "x-admin-key": getAdminKey(), ...(opts.headers || {}) } });
 }
 
 function BarChart({ entries }) {
@@ -53,7 +53,7 @@ function Heatmap({ cells }) {
 
 export default function Admin() {
   const navigate = useNavigate();
-  const [hasKey, setHasKey] = useState(!!sessionStorage.getItem("babel:adminKey"));
+  const [hasKey, setHasKey] = useState(() => !!getAdminKey());
   const [keyInput, setKeyInput] = useState("");
   const [loginError, setLoginError] = useState("");
   const [data, setData] = useState(null); // { m, subs }
@@ -67,10 +67,10 @@ export default function Admin() {
       setData({ m, subs });
       setLoginError("");
     } catch (e) {
-      sessionStorage.removeItem("babel:adminKey");
+      clearAdminKey();
       setHasKey(false);
       setData(null);
-      setLoginError("Wrong key, or the backend isn't running — try again.");
+      setLoginError(e.status === 429 ? "Too many attempts. Try again later." : "Wrong key, or the backend isn't running. Try again.");
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,8 @@ export default function Admin() {
 
   function login() {
     if (!keyInput.trim()) { toast("Enter the admin key"); return; }
-    sessionStorage.setItem("babel:adminKey", keyInput.trim());
+    setAdminKey(keyInput.trim());
+    setKeyInput("");
     setHasKey(true);
   }
   async function action(id, act) {
@@ -102,7 +103,7 @@ export default function Admin() {
         {!hasKey && (
           <div className="card" style={{ padding: 22, maxWidth: 420 }}>
             <p style={{ fontSize: 12, marginBottom: 12 }}>Enter the admin key (set as <code>ADMIN_KEY</code> in <code>server/.env</code>) to view usage metrics and moderate submissions.</p>
-            <div className="form-field"><label>Admin key</label><input value={keyInput} onChange={(e) => setKeyInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} type="password" placeholder="••••••••" /></div>
+            <div className="form-field"><label htmlFor="admin-key">Admin key</label><input id="admin-key" autoComplete="off" value={keyInput} onChange={(e) => setKeyInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} type="password" placeholder="••••••••" /></div>
             <button className="btn btn-amber" onClick={login}>View metrics →</button>
             {loginError && <p style={{ fontSize: 11, marginTop: 10, color: "var(--amber-light)" }}>{loginError}</p>}
           </div>

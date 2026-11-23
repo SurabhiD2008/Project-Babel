@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { composeAnalyse } from "../lib/feeling.js";
-import { escHtml } from "../lib/util.js";
 import { useModal } from "../context/ModalContext.jsx";
 import { toast } from "../lib/ui.js";
 import Footer from "../components/Footer.jsx";
@@ -35,15 +34,24 @@ export default function Composer() {
     toast(`Downloading ${found.length} image card${found.length > 1 ? "s" : ""}…`);
   }
 
-  function annotatedHTML() {
-    let html = text ? escHtml(text) : "<span style='color:var(--text-faint)'>Nothing written yet.</span>";
+  /* Splits the text into plain runs and marked phrases (the first plain
+     occurrence of each found phrase), rendered as React elements. */
+  function annotatedSegments() {
+    let segments = [{ text }];
     found.forEach((f, i) => {
-      const safe = escHtml(f.phrase);
-      const tip = escHtml(`${f.lang}: ${f.word} — ${f.def}`);
-      // Underlines arrive one after another (spec §5: 50ms stagger per annotation).
-      html = html.replace(safe, () => `<span class="mark" style="animation-delay:${i * 50 + 200}ms" data-slug="${f.slug}" title="${tip}">${safe}</span>`);
+      const at = segments.findIndex((s) => !s.mark && s.text.includes(f.phrase));
+      if (at === -1) return;
+      const { text: run } = segments[at];
+      const cut = run.indexOf(f.phrase);
+      segments = [
+        ...segments.slice(0, at),
+        { text: run.slice(0, cut) },
+        { text: f.phrase, mark: f, order: i },
+        { text: run.slice(cut + f.phrase.length) },
+        ...segments.slice(at + 1),
+      ];
     });
-    return html;
+    return segments.filter((s) => s.text);
   }
 
   return (
@@ -74,8 +82,12 @@ export default function Composer() {
                   <div
                     className="annotated page-fade"
                     onClick={(e) => { const s = e.target.dataset?.slug; if (s) navigate(`/word/${s}`); }}
-                    dangerouslySetInnerHTML={{ __html: annotatedHTML() }}
-                  />
+                  >
+                    {text ? annotatedSegments().map((s, i) => s.mark ? (
+                      // Underlines arrive one after another, 50 ms apart.
+                      <span key={i} className="mark" style={{ animationDelay: `${s.order * 50 + 200}ms` }} data-slug={s.mark.slug} title={`${s.mark.lang}: ${s.mark.word} — ${s.mark.def}`}>{s.text}</span>
+                    ) : s.text) : <span style={{ color: "var(--text-faint)" }}>Nothing written yet.</span>}
+                  </div>
                 )}
               </div>
               <div className="compose-footer">

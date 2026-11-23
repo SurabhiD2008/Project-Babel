@@ -39,7 +39,7 @@ export default function LanguageMap() {
       return CAT_COLOR[n.w.category];
     }
 
-    svg.innerHTML = "";
+    svg.replaceChildren();
     const g = document.createElementNS(NS, "g"); svg.appendChild(g);
     const linkEls = links.map(([a, b]) => { const l = document.createElementNS(NS, "line"); l.setAttribute("stroke", "rgba(184,148,74,.08)"); l.setAttribute("stroke-width", "0.5"); g.appendChild(l); return { l, a, b }; });
     const labelEls = Object.keys(byCat).map((cat) => { const t = document.createElementNS(NS, "text"); t.setAttribute("fill", CAT_COLOR[cat] + "44"); t.setAttribute("font-family", "Space Mono"); t.setAttribute("font-size", "9"); t.setAttribute("text-anchor", "middle"); t.setAttribute("style", "text-transform:uppercase;letter-spacing:2px"); t.textContent = categoryName(cat); g.appendChild(t); return { t, group: byCat[cat] }; });
@@ -65,7 +65,13 @@ export default function LanguageMap() {
       }
     }
     function bindNode(c, n) {
-      c.addEventListener("mouseenter", (e) => { tip.style.display = "block"; tip.innerHTML = `<div class="mt-word">${n.w.word}</div><div class="mt-def">${n.w.defShort}</div><div class="ir-dist">${n.w.dist}% · ${n.w.language}</div>`; const rect = svg.getBoundingClientRect(); tip.style.left = e.clientX - rect.left + 12 + "px"; tip.style.top = e.clientY - rect.top + 12 + "px"; });
+      c.addEventListener("mouseenter", (e) => { tip.style.display = "block"; fillTip(n.w); const rect = svg.getBoundingClientRect(); tip.style.left = e.clientX - rect.left + 12 + "px"; tip.style.top = e.clientY - rect.top + 12 + "px"; });
+    // Word text can come from community submissions, so the tooltip is built
+    // from text nodes, never parsed as HTML.
+    function fillTip(w) {
+      const line = (cls, text) => { const d = document.createElement("div"); d.className = cls; d.textContent = text; return d; };
+      tip.replaceChildren(line("mt-word", w.word), line("mt-def", w.defShort), line("ir-dist", `${w.dist}% · ${w.language}`));
+    }
       c.addEventListener("mousemove", (e) => { const rect = svg.getBoundingClientRect(); tip.style.left = e.clientX - rect.left + 12 + "px"; tip.style.top = e.clientY - rect.top + 12 + "px"; });
       c.addEventListener("mouseleave", () => { tip.style.display = "none"; });
       c.addEventListener("click", (e) => { e.stopPropagation(); S.selected = n.w.slug; if (!sleeping) S.pausedUntil = Date.now() + 6000; setSelected(n.w); restyle(); positionFrame(); wake(); });

@@ -64,14 +64,14 @@ A client-side SPA. No SSR: the app is Canvas-, physics-, and `localStorage`-heav
 Home · Atlas · Word Portrait · Name My Feeling · Composer · Language Map · Theory · About · Sources · Account · Admin. Each is a self-contained component; shared UI lives in `src/components/` (Nav, WordCard, DistBar, CatTag, SpeakButton, CardModal, ShareMenu, AuthModal, Footer).
 
 ### State (React Context, `src/context/`)
-- **AuthContext** — current user + `login`/`register`/`logout`; persists a JWT + user in `localStorage`.
+- **AuthContext** — current user + `login`/`register`/`logout`. The session itself is an HttpOnly cookie the page cannot read; `localStorage` keeps only the display profile, which is re-checked against `/api/user/me` on load.
 - **ModalContext** — app-wide image-card actions (`openCard`, `shareCardTo`, `download`); renders `CardModal` / `ShareMenu` at the root so any page can trigger them.
 - **WordsContext** — the live word count + a `version` counter. On boot it hydrates the bundled data from the DB (see *Live hydration* below); when that changes anything it bumps `version`, which re-keys `<Routes>` so the current page recomputes.
 
 ### Client libraries (`src/lib/`)
 - **`data/`** — `data.js` is the bundled 500-word dataset (copied verbatim from the original); `data/index.js` re-exports it as ES modules (`WORDS`, `WORDS_BY_SLUG`, `VISIBLE_WORDS`, `CATEGORIES`, …).
 - **`engine.js`** — the offline matching engine — field-weighted BM25 + a concept thesaurus (`localFeelingSearch`, `analyseText`, `meaningSearch`, `recommend`, `CogDistance`). See [matching-engine.md](matching-engine.md).
-- **`api.js`** — the backend client: `resolveApiBase()` probes `/api` then `localhost:4600`, `apiFetch()` attaches the JWT, and an `API` object wraps auth / saved words / cards / history / submissions with **localStorage fallbacks**.
+- **`api.js`** — the backend client: `resolveApiBase()` probes the same-origin `/api`, `apiFetch()` sends the session cookie and the `x-babel-client` header, and an `API` object wraps auth / saved words / cards / history / submissions with **localStorage fallbacks**.
 - **`search.js`** — the Atlas search: relevance-ranked, accent-insensitive, typo-tolerant; falls through to the meaning engine for plain descriptions.
 - **`feeling.js`** — orchestrates Name My Feeling / Composer: backend first, offline engine as fallback.
 - **`card.js`** — renders the 1080×1080 word card to a `<canvas>` and provides download / Web-Share / share-menu helpers.
@@ -102,7 +102,7 @@ An **Express** app that is also a **Vercel serverless function**.
 ### What it does
 - **Words** — `GET /api/words` (paginated/filterable), `/words/:slug` (full portrait), `/words/all` (the list the frontend hydrates from), `/categories`.
 - **Matching** — `POST /api/feelings/search` and `/compose/analyse` run `server/src/ai.js` (the same offline engine), or Claude if `ANTHROPIC_API_KEY` is set. The `engine` field is returned so the UI can disclose which answered.
-- **Accounts** — JWT + bcrypt (`/auth/*`, `/user/*`): saved words, saved cards, and search history, all per-user.
+- **Accounts** — bcrypt (cost 12) passwords and a signed session in an HttpOnly cookie (`/auth/*`, `/user/*`): saved words, saved cards, and search history, all per-user.
 - **Submissions** — `POST /api/submissions` runs `screenSubmission()` (duplicates, placeholders, gibberish, coherence, unknown-language flag) before queuing. See [submission-screening.md](submission-screening.md).
 - **Admin** (gated by `ADMIN_KEY`) — usage metrics, a moderation queue, **accept-inserts-a-real-Word**, and word delete.
 
@@ -140,13 +140,14 @@ If the API is unreachable it's a no-op and the app runs on the bundled 500 words
 
 ## Deployment (Vercel + Neon)
 
-- **Build** (`vercel.json`): install server deps + `prisma generate` (for the function), then `cd web && npm install && npm run build`. **Output:** `web/dist`.
+- **Build** (`vercel.json`): `npm ci` for the server + `prisma generate` (for the function), then `cd web && npm ci && npm run build`. **Output:** `web/dist`.
 - **Routing:** static assets from `web/dist`; `/api/(.*)` → the `api/index.js` serverless function.
 - **Database:** Neon Postgres via the Vercel integration (`DATABASE_URL` pooled for the app, `DATABASE_URL_UNPOOLED` direct for migrations). Prisma uses `binaryTargets` including Vercel's Linux runtime.
-- **Env vars:** `DATABASE_URL(_UNPOOLED)`, `JWT_SECRET`, `ADMIN_KEY`, optional `ANTHROPIC_API_KEY`.
+- **Env vars:** see the table in the README. The function refuses to start without `DATABASE_URL` and a `JWT_SECRET` of at least 32 characters.
+- **Headers:** `vercel.json` sets the page security headers (content security policy and others); the API sets its own on every response.
 - **CI/CD:** the GitHub repo is connected — every push to `main` auto-builds and deploys; `npx vercel deploy --prod` also works.
 
-For local development the same API runs on SQLite with zero setup (`server/` `npm run setup && npm start`), and the React app runs on Vite (`web/` `npm run dev`, proxying `/api` to `:4600`).
+For local development the same API runs against any Postgres database (`server/` `npm run setup && npm start`), and the React app runs on Vite (`web/` `npm run dev`, proxying `/api` to `:4600`).
 
 ---
 

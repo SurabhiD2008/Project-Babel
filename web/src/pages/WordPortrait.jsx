@@ -8,6 +8,7 @@ import { useModal } from "../context/ModalContext.jsx";
 import SpeakButton from "../components/SpeakButton.jsx";
 import DistBar from "../components/DistBar.jsx";
 import WordCard from "../components/WordCard.jsx";
+import RichText from "../components/RichText.jsx";
 import Footer from "../components/Footer.jsx";
 
 const DIM_KEYS = ["cognitive", "cultural", "linguistic", "english", "philosophy", "art"];
@@ -18,7 +19,7 @@ export default function WordPortrait() {
   const { download, shareCardTo } = useModal();
   const [saved, setSaved] = useState(() => API.isSaved(slug));
   const [ask, setAsk] = useState("");
-  const [answer, setAnswer] = useState(null); // { loading } | { html }
+  const [answer, setAnswer] = useState(null); // { loading } | { question }
 
   if (!w) {
     return (
@@ -56,15 +57,8 @@ export default function WordPortrait() {
   function askBabel() {
     setAnswer({ loading: true });
     API.track("ask_babel", { slug });
-    setTimeout(() => {
-      const q = ask.trim();
-      const html =
-        `<b>${w.word}</b> ${w.dims.cognitive.toLowerCase().startsWith("names") ? "" : "— "}${w.dims.cognitive} ` +
-        `In practice: ${w.defShort.toLowerCase()} You'd reach for it ${w.intensity > 70 ? "in a heavy, wholehearted moment" : "in an everyday, low-stakes moment"} — the kind English makes you explain in a whole sentence. ` +
-        (q ? `As for “${q}”: the honest answer is that ${w.language} lets you say in one word what English can only circle. ` : "") +
-        `<br><br><span style="color:var(--violet)">Sapir-Whorf: ${writeSapirWhorf(w)}</span>`;
-      setAnswer({ html });
-    }, 700);
+    const question = ask.trim();
+    setTimeout(() => setAnswer({ question }), 700);
   }
 
   return (
@@ -174,7 +168,15 @@ export default function WordPortrait() {
           </div>
           <div id="askResponse">
             {answer?.loading && <div className="ai-response"><span className="loading-word" style={{ fontSize: "1rem" }}>Consulting Babel…</span></div>}
-            {answer?.html && <div className="ai-response" dangerouslySetInnerHTML={{ __html: answer.html }} />}
+            {answer && !answer.loading && (
+              <div className="ai-response">
+                <b>{w.word}</b> {w.dims.cognitive.toLowerCase().startsWith("names") ? "" : "— "}{w.dims.cognitive}{" "}
+                In practice: {w.defShort.toLowerCase()} You'd reach for it {w.intensity > 70 ? "in a heavy, wholehearted moment" : "in an everyday, low-stakes moment"} — the kind English makes you explain in a whole sentence.{" "}
+                {answer.question && <>As for “{answer.question}”: the honest answer is that {w.language} lets you say in one word what English can only circle. </>}
+                <br /><br />
+                <span style={{ color: "var(--violet)" }}>Sapir-Whorf: <RichText as="span" html={writeSapirWhorf(w)} /></span>
+              </div>
+            )}
           </div>
         </div>
 

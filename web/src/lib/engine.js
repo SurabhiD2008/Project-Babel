@@ -417,21 +417,26 @@ function altConfidence(r, score, evidence) {
   return Math.min(score - 2, Math.max(28, Math.round(40 + r.cos * (0.4 + 0.6 * evidence) * 50)));
 }
 
+/* The explanation is the one engine output that carries markup (<b>, <br>).
+   Every interpolated value is escaped: word data can come from community
+   submissions and the snippet is the visitor's own text. */
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function writeExplanation(w, text, ph) {
-  const he = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const he = escapeHtml;
   const parts = text.trim().split(/\s+/);
   const snippet = he(parts.slice(0, 10).join(" ")) + (parts.length > 10 ? "…" : "");
-  const emo = (CATEGORY_NAMES[w.category] || w.category).toLowerCase();
+  const emo = he((CATEGORY_NAMES[w.category] || w.category).toLowerCase());
+  const word = he(w.word), language = he(w.language), def = he(w.defShort.toLowerCase());
   const depth = ph.intensity > 70 ? "and it runs deep — it presses on you, it doesn't just pass through"
     : ph.intensity < 50 ? "held quietly, in a low and private register" : "at a steady, lived-in register";
   return (
     `<b>What you're feeling:</b> underneath the words, this reads as <b>${emo}</b> — ${depth}.` +
-    `<br><b>Why ${w.word}:</b> ${w.language} folds that exact feeling into a single word — ${w.defShort.toLowerCase()}` +
-    `<br><b>How it fits you:</b> your “${snippet}” points at the same ${emo} that ${w.word} names — the thing English needs a whole sentence to reach.`
+    `<br><b>Why ${word}:</b> ${language} folds that exact feeling into a single word — ${def}` +
+    `<br><b>How it fits you:</b> your “${snippet}” points at the same ${emo} that ${word} names — the thing English needs a whole sentence to reach.`
   );
 }
 function writeSapirWhorf(w) {
-  return `Now that you have the word ${w.word} — do you think you'll notice this feeling more often, or was it always there, just unnamed?`;
+  return `Now that you have the word ${escapeHtml(w.word)} — do you think you'll notice this feeling more often, or was it always there, just unnamed?`;
 }
 
 /* Name My Feeling. `shape` lets each runtime decide how a word is serialised. */

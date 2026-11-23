@@ -1,29 +1,31 @@
 import { Store } from "./store.js";
 import { VISIBLE_WORDS, CATEGORIES, categoryCounts } from "../data/index.js";
 
-/* ---------- backend client (real API first, localStorage fallback) ---------- */
+/* ---------- backend client (real API first, localStorage fallback) ----------
+   The session lives in an HttpOnly cookie the page cannot read; the browser
+   sends it on same-origin requests. Every request carries the client header
+   the API requires on writes, which a cross-site page cannot add. */
+const CLIENT_HEADER = { "x-babel-client": "1" };
 let apiBasePromise = null;
 let apiBaseFailedAt = 0;
-const LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
+
+// Sessions from before cookie sign-in kept a token in storage; it is no longer
+// used, so it is removed rather than left behind.
+Store.del("token");
+
 export function resolveApiBase() {
   // A failed probe is remembered only briefly: a serverless cold start (or a
   // dropped connection) shouldn't leave the whole session in offline mode.
   if (apiBasePromise && !(apiBaseFailedAt && Date.now() - apiBaseFailedAt > 20000)) return apiBasePromise;
   apiBaseFailedAt = 0;
   apiBasePromise = (async () => {
-    // Same-origin API first (generous timeout — the first hit may be waking the
-    // function). The local dev server is only worth trying when running locally.
-    const candidates = LOCAL ? [["/api", 900], ["http://localhost:4600/api", 900]] : [["/api", 4500]];
-    for (const [base, wait] of candidates) {
-      try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), wait);
-        const res = await fetch(base + "/health", { signal: ctrl.signal });
-        clearTimeout(t);
-        if (res.ok) return base;
-      } catch (e) {
-        /* try next */
-      }
+    // Same-origin only (in development Vite proxies /api to the local server).
+    // A generous timeout, because the first hit may be waking the function.
+    try {
+      const res = await fetch("/api/health", { signal: AbortSignal.timeout(4500) });
+      if (res.ok) return "/api";
+    } catch (e) {
+      /* offline: fall through */
     }
     apiBaseFailedAt = Date.now();
     return null;
@@ -34,13 +36,8 @@ export function resolveApiBase() {
 export async function apiFetch(path, opts = {}) {
   const base = await resolveApiBase();
   if (!base) throw new Error("backend unreachable");
-  const token = Store.get("token", null);
-  const headers = Object.assign(
-    { "content-type": "application/json" },
-    opts.headers || {},
-    token ? { Authorization: "Bearer " + token } : {}
-  );
-  const res = await fetch(base + path, Object.assign({}, opts, { headers }));
+  const headers = Object.assign({ "content-type": "application/json" }, CLIENT_HEADER, opts.headers || {});
+  const res = await fetch(base + path, Object.assign({}, opts, { headers, credentials: "same-origin" }));
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(data.error || "Request failed"), { status: res.status, data });
   return data;
@@ -51,8 +48,12 @@ let savedCache = new Set(Store.get("savedSlugs", []));
 function persistSaved() {
   Store.set("savedSlugs", [...savedCache]);
 }
+// True when the signed-in profile belongs to a server account (not the
+// device-only offline demo profile).
+const hasServerSession = () => !!Store.get("authUser", null)?.server;
+
 export async function hydrateSavedFromBackend() {
-  if (!Store.get("token", null)) return;
+  if (!hasServerSession()) return;
   try {
     const rows = await apiFetch("/user/saved");
     savedCache = new Set(rows.map((r) => r.slug));
@@ -65,6 +66,17 @@ export async function hydrateSavedFromBackend() {
 export const API = {
   currentUser() {
     return Store.get("authUser", null);
+  },
+  /* Confirms a remembered server profile still has a live session; an expired
+     or revoked session signs the profile out. Offline, the profile is kept. */
+  async restoreSession() {
+    if (!hasServerSession()) return;
+    try {
+      const me = await apiFetch("/user/me");
+      Store.set("authUser", { email: me.email, name: me.name, server: true });
+    } catch (e) {
+      if (e.status === 401) this.logout();
+    }
   },
   wordOfDay() {
     const day = Math.floor(Date.now() / 864e5);
@@ -100,7 +112,7 @@ export const API = {
       if (base)
         fetch(base + "/events", {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: { "content-type": "application/json", ...CLIENT_HEADER },
           body: JSON.stringify({ event, slug: data?.slug || "" }),
         }).catch(() => {});
     });
@@ -110,7 +122,9 @@ export const API = {
       const r = await apiFetch("/submissions", { method: "POST", body: JSON.stringify(sub) });
       return { ok: true, queued: r.queued, flagged: r.flagged, note: r.note };
     } catch (e) {
-      if (e.status === 422) return { ok: false, error: e.data?.error || e.message };
+      // Any answer from the server (refusal, rate limit) is shown; only an
+      // unreachable server queues the submission on this device.
+      if (e.status) return { ok: false, error: e.data?.error || e.message };
       const list = Store.get("submissions", []);
       list.push({ ...sub, status: "pending", submitted_at: new Date().toISOString() });
       Store.set("submissions", list);
@@ -132,8 +146,7 @@ export const API = {
   async register(email, pass, name) {
     try {
       const r = await apiFetch("/auth/register", { method: "POST", body: JSON.stringify({ email, password: pass, name }) });
-      Store.set("token", r.token);
-      Store.set("authUser", r.user);
+      Store.set("authUser", { ...r.user, server: true });
       await hydrateSavedFromBackend();
       return { ok: true };
     } catch (e) {
@@ -143,15 +156,13 @@ export const API = {
       users[email] = { name };
       Store.set("users", users);
       Store.set("authUser", { email, name });
-      Store.set("token", null);
       return { ok: true, offline: true };
     }
   },
   async login(email, pass) {
     try {
       const r = await apiFetch("/auth/login", { method: "POST", body: JSON.stringify({ email, password: pass }) });
-      Store.set("token", r.token);
-      Store.set("authUser", r.user);
+      Store.set("authUser", { ...r.user, server: true });
       await hydrateSavedFromBackend();
       return { ok: true };
     } catch (e) {
@@ -161,13 +172,13 @@ export const API = {
       return { ok: true, offline: true };
     }
   },
-  async updateAccount(name, password) {
+  async updateAccount(name, password, currentPassword) {
     try {
       const body = {};
       if (name != null) body.name = name;
-      if (password) body.password = password;
+      if (password) Object.assign(body, { password, currentPassword });
       const r = await apiFetch("/user/me", { method: "PATCH", body: JSON.stringify(body) });
-      if (r.user) Store.set("authUser", r.user);
+      if (r.user) Store.set("authUser", { ...r.user, server: true });
       else if (name != null) Store.set("authUser", { ...(Store.get("authUser", {}) || {}), name });
       return { ok: true };
     } catch (e) {
@@ -183,7 +194,7 @@ export const API = {
     return { ok: true };
   },
   logout() {
-    Store.del("token");
+    if (hasServerSession()) apiFetch("/auth/logout", { method: "POST" }).catch(() => {});
     Store.del("authUser");
     savedCache = new Set();
     persistSaved();
