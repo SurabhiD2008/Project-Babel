@@ -49,10 +49,12 @@ export default function LanguageMap() {
       const net = S.mode === "network";
       linkEls.forEach(({ l }) => (l.style.display = net ? "" : "none"));
       labelEls.forEach(({ t }) => (t.style.display = net ? "" : "none"));
+      axisEls.forEach((t) => (t.style.display = S.mode === "scatter" ? "" : "none"));
       for (let i = 0; i < nodeEls.length; i++) {
         const c = nodeEls[i], n = nodes[i];
         const dim = S.filterCat && n.w.category !== S.filterCat, sel = S.selected === n.w.slug;
-        c.setAttribute("r", sel ? n.r * 1.4 : n.r); c.setAttribute("fill", colorOf(n));
+        const r = S.mode === "scatter" ? n.r * 0.65 : n.r; // smaller dots where points overlap most
+        c.setAttribute("r", sel ? r * 1.4 : r); c.setAttribute("fill", colorOf(n));
         c.setAttribute("opacity", dim ? 0.1 : 0.85); c.setAttribute("stroke", sel ? "#F0ECE4" : "none"); c.setAttribute("stroke-width", sel ? 1.5 : 0);
       }
     }
@@ -64,14 +66,14 @@ export default function LanguageMap() {
         labelEls.forEach(({ t, group }) => { const cx = group.reduce((s, n) => s + n.x, 0) / group.length, cy = group.reduce((s, n) => s + n.y, 0) / group.length; t.setAttribute("x", cx); t.setAttribute("y", cy); });
       }
     }
-    function bindNode(c, n) {
-      c.addEventListener("mouseenter", (e) => { tip.style.display = "block"; fillTip(n.w); const rect = svg.getBoundingClientRect(); tip.style.left = e.clientX - rect.left + 12 + "px"; tip.style.top = e.clientY - rect.top + 12 + "px"; });
     // Word text can come from community submissions, so the tooltip is built
     // from text nodes, never parsed as HTML.
     function fillTip(w) {
       const line = (cls, text) => { const d = document.createElement("div"); d.className = cls; d.textContent = text; return d; };
       tip.replaceChildren(line("mt-word", w.word), line("mt-def", w.defShort), line("ir-dist", `${w.dist}% · ${w.language}`));
     }
+    function bindNode(c, n) {
+      c.addEventListener("mouseenter", (e) => { tip.style.display = "block"; fillTip(n.w); const rect = svg.getBoundingClientRect(); tip.style.left = e.clientX - rect.left + 12 + "px"; tip.style.top = e.clientY - rect.top + 12 + "px"; });
       c.addEventListener("mousemove", (e) => { const rect = svg.getBoundingClientRect(); tip.style.left = e.clientX - rect.left + 12 + "px"; tip.style.top = e.clientY - rect.top + 12 + "px"; });
       c.addEventListener("mouseleave", () => { tip.style.display = "none"; });
       c.addEventListener("click", (e) => { e.stopPropagation(); S.selected = n.w.slug; if (!sleeping) S.pausedUntil = Date.now() + 6000; setSelected(n.w); restyle(); positionFrame(); wake(); });
@@ -97,8 +99,34 @@ export default function LanguageMap() {
       CATEGORIES.forEach((c, ci) => { (byCat[c.key] || []).forEach((n, ni) => { n.tx = colW * ci + colW / 2; n.ty = 80 + ni * 28; }); });
       nodes.forEach((n) => { n.x = W / 2 + (Math.random() - 0.5) * 60; n.y = H / 2 + (Math.random() - 0.5) * 60; });
     })();
+    // Scatter axes fit the data's actual spread (distances sit roughly 62–97,
+    // intensities 26–88) — on fixed 0–100 axes every word piled into one corner.
+    // Many words share an integer score, so each gets a small, stable jitter
+    // (from its slug) to keep identical scores from stacking on one point.
+    const SX0 = 70, SX1 = W - 30, SY0 = 70, SY1 = H - 50;
+    const dists = nodes.map((n) => n.w.dist), ints = nodes.map((n) => n.w.intensity || 60);
+    const dMin = Math.min(...dists), dMax = Math.max(...dists), iMin = Math.min(...ints), iMax = Math.max(...ints);
+    const dSpan = Math.max(1, dMax - dMin), iSpan = Math.max(1, iMax - iMin);
+    nodes.forEach((n) => {
+      let h = 0; for (const ch of n.w.slug) h = (h * 31 + ch.charCodeAt(0)) | 0;
+      n.jx = (((h & 0xff) / 255) - 0.5) * 0.8; n.jy = ((((h >> 8) & 0xff) / 255) - 0.5) * 0.8;
+      n.sx = SX0 + ((n.w.dist - dMin + n.jx) / dSpan) * (SX1 - SX0);
+      n.sy = SY1 - (((n.w.intensity || 60) - iMin + n.jy) / iSpan) * (SY1 - SY0);
+    });
+    const axisEls = [
+      [SX0, H - 18, "start", `← ${dMin}% · closer to English`],
+      [SX1 - 60, H - 18, "end", `further from English · ${dMax}% →`],
+      [16, SY1, "start", `${iMin} intensity`],
+      [16, SY0 - 8, "start", `↑ ${iMax} intensity`],
+    ].map(([x, y, anchor, label]) => {
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("x", x); t.setAttribute("y", y); t.setAttribute("text-anchor", anchor);
+      t.setAttribute("fill", "rgba(237,232,222,.38)"); t.setAttribute("font-family", "Space Mono"); t.setAttribute("font-size", "9");
+      t.setAttribute("style", "text-transform:uppercase;letter-spacing:1.5px"); t.textContent = label;
+      g.insertBefore(t, g.firstChild); return t;
+    });
     function targetFor(n) {
-      if (S.mode === "scatter") return [60 + (n.w.dist / 100) * 680, H - 40 - ((n.w.intensity || 60) / 100) * (H - 80)];
+      if (S.mode === "scatter") return [n.sx, n.sy];
       if (S.mode === "tree") return [n.tx, n.ty];
       return [n.nx, n.ny];
     }
