@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "React (Vite) frontend for Project Babel — an atlas of untranslatable words.",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

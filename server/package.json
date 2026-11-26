@@ -2,6 +2,7 @@
   "name": "babel-backend",
   "version": "1.0.0",
   "description": "Project Babel API — Express + Prisma backend (spec §6–§7)",
+  "license": "MIT",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

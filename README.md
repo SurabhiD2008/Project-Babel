@@ -135,7 +135,7 @@ Deeper write-ups of how the interesting parts work live in [`docs/`](docs/):
 
 ## License
 
-© 2026 Surabhi Datta. **All rights reserved.** This repository is public for viewing and portfolio evaluation only — no permission is granted to use, copy, modify, or redistribute it without prior written consent. See [LICENSE](LICENSE).
+MIT License, © 2026 Surabhi Datta. You are free to use, copy, modify and distribute this code, provided the copyright and licence notice are kept. See [LICENSE](LICENSE).
 
 ---
 
